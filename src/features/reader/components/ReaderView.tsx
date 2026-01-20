@@ -105,6 +105,8 @@ export default function ReaderView() {
     // Update last position when book or chapter changes
     useEffect(() => {
         lastBiblePosition.set({ lastBook: bookKey, lastChapter: chapterKey });
+        // Reset active note when changing chapter or book
+        setActiveNote(null);
     }, [bookKey, chapterKey]);
 
     const safeParseInt = (s: string) => {
@@ -148,40 +150,47 @@ export default function ReaderView() {
         const footnotes: string[] = [];
         let noteCounter = 1;
 
-        const versesList = Object.entries(chapterData)
-            .map(([num, content]) => {
-                let text = "";
-                let verseNotes: number[] = [];
+        // Importante: Ordenar las entradas del capítulo numéricamente ANTES de procesarlas
+        // para que las notas se colecten y numeren en el orden correcto del texto.
+        const sortedEntries = Object.entries(chapterData).sort((a, b) => {
+            return parseInt(a[0]) - parseInt(b[0]);
+        });
 
-                if (typeof content === "string") {
-                    text = content;
-                } else if (typeof content === "object" && content !== null) {
-                    text = (content as any).texto || "";
-                    const notes = (content as any).notas as string[] | undefined;
-                    if (notes && Array.isArray(notes)) {
-                        notes.forEach((note) => {
+        const versesList = sortedEntries.map(([num, content]) => {
+            let text = "";
+            let verseNotes: number[] = [];
+
+            if (typeof content === "string") {
+                text = content;
+            } else if (typeof content === "object" && content !== null) {
+                text = (content as any).texto || "";
+                const notes = (content as any).notas as string[] | undefined;
+                if (notes && Array.isArray(notes)) {
+                    notes.forEach((note) => {
+                        if (note && note.trim() !== "") {
                             footnotes.push(note);
                             verseNotes.push(noteCounter++);
-                        });
-                    }
+                        }
+                    });
                 }
+            }
 
-                const verseNum = parseInt(num);
-                const isHighlighted = requiredVerses.length > 0 && requiredVerses.includes(verseNum);
+            const verseNum = parseInt(num);
+            const isHighlighted = requiredVerses.length > 0 && requiredVerses.includes(verseNum);
 
-                return {
-                    number: num,
-                    text,
-                    noteIndices: verseNotes,
-                    isHighlighted,
-                };
-            })
-            .sort((a, b) => parseInt(a.number) - parseInt(b.number));
+            return {
+                number: num,
+                text,
+                noteIndices: verseNotes,
+                isHighlighted,
+            };
+        });
 
         return { versesList, footnotes };
     }, [chapterData, requiredVerses]);
 
     const { versesList, footnotes } = processedData;
+    
     const highlightedCount = versesList.filter((v) => v.isHighlighted).length;
 
     const currentCommentaryChapter = commentaryData?.chapters?.find(
@@ -356,14 +365,14 @@ export default function ReaderView() {
             </div>
 
             {footnotes.length > 0 && (
-                <div class="mt-16 pt-8 border-t border-theme-text/20" id="footnotes">
+                <div class="mt-16 pt-8 border-t border-theme-text/20 mb-12" id="footnotes" key={`${bookKey}-${chapterKey}-footnotes`}>
                     <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--color-text)', opacity: 0.8 }}>
                         <BookOpen class="w-5 h-5" />
-                        Notas del Capítulo
+                        Notas del Capítulo ({footnotes.length})
                     </h3>
                     <ol class="list-none space-y-3 reader-text opacity-80" style={{ color: 'var(--color-text)' }}>
                         {footnotes.map((note, idx) => (
-                            <li key={idx} id={`note-${idx + 1}`} class={`pl-2 flex gap-2 group p-2 hover:bg-theme-text/5 rounded transition-colors scroll-mt-28 ${activeNote === `note-${idx + 1}` ? 'note-selected shadow-sm' : ''}`}>
+                            <li key={`${idx}-${chapterKey}`} id={`note-${idx + 1}`} class={`pl-2 flex gap-2 group p-2 hover:bg-theme-text/5 rounded transition-colors scroll-mt-28 ${activeNote === `note-${idx + 1}` ? 'note-selected shadow-sm' : ''}`}>
                                 <span class="font-bold text-[var(--color-link)] shrink-0">[{idx + 1}]</span>
                                 <span>{note}</span>
                             </li>
