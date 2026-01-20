@@ -1,4 +1,4 @@
-const CACHE_NAME = 'astro-reader-data-v2';
+const CACHE_NAME = 'astro-reader-data-v3';
 const TTL = 7 * 24 * 60 * 60 * 1000; // 7 días en milisegundos
 
 // Caché en memoria para acceso ultrarrápido durante la sesión actual
