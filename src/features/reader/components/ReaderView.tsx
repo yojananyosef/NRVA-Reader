@@ -22,8 +22,22 @@ export default function ReaderView() {
     const [params, setParams] = useState({ book: 'gen', chapter: '1', verses: '', search: '' });
     const [searchResults, setSearchResults] = useState<BiblePassage[]>([]);
     const [multiPassageData, setMultiPassageData] = useState<Record<string, any>>({});
+    const [allTitles, setAllTitles] = useState<any[]>([]);
     const [collapsedPassages, setCollapsedPassages] = useState<Record<string, boolean>>({});
     const [isSearching, setIsSearching] = useState(false);
+
+    // Load titles on mount
+    useEffect(() => {
+        fetchWithCache<any>('/data/titles/headers.json')
+            .then(data => {
+                if (data && data.data) {
+                    // Flatten the nested array structure if necessary
+                    const flattened = Array.isArray(data.data[0]) ? data.data[0] : data.data;
+                    setAllTitles(flattened);
+                }
+            })
+            .catch(err => console.error("Error loading titles:", err));
+    }, []);
 
     useEffect(() => {
         const handleHashChange = () => {
@@ -239,6 +253,21 @@ export default function ReaderView() {
 
     const { versesList, footnotes } = processedData;
 
+    // Helper to get titles for a specific book/chapter
+    const getChapterTitles = (bookCode: string, chapter: string | number) => {
+        if (!allTitles.length) return [];
+        const bookEntry = booksIndex.find(b => b.code === bookCode);
+        if (!bookEntry) return [];
+
+        const bookTitles = allTitles.find(t =>
+            t?.display?.toLowerCase() === bookEntry.name.toLowerCase()
+        );
+        if (!bookTitles) return [];
+
+        const chapterTitles = bookTitles.chapters?.find((c: any) => c.chapter === parseInt(chapter.toString()));
+        return chapterTitles?.content || [];
+    };
+
     const highlightedCount = versesList.filter((v) => v.isHighlighted).length;
 
     const currentCommentaryChapter = commentaryData?.chapters?.find(
@@ -336,30 +365,43 @@ export default function ReaderView() {
 
                                 {!isCollapsed && (
                                     <div class="verses space-y-4 reader-text animate-in slide-in-from-top-2 duration-300">
-                                        {versesToRender.map(([num, content]) => {
-                                            const verseText = typeof content === "string" ? content : (content as any).texto || "";
-                                            const verseId = `${result.book}-${result.chapter}-${num}`;
-                                            const isGlobalHighlighted = $highlights[verseId];
+                                        {(() => {
+                                            const chapterTitles = getChapterTitles(result.book, result.chapter);
+                                            return versesToRender.map(([num, content]) => {
+                                                const verseText = typeof content === "string" ? content : (content as any).texto || "";
+                                                const verseId = `${result.book}-${result.chapter}-${num}`;
+                                                const isGlobalHighlighted = $highlights[verseId];
+                                                const verseNum = parseInt(num);
 
-                                            return (
-                                                <p
-                                                    key={num}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        toggleHighlight(verseId);
-                                                    }}
-                                                    class={`relative p-2 -mx-2 rounded transition-all cursor-pointer verse-item group
-                                                        ${isGlobalHighlighted ? 'is-user-highlighted' : ''}
-                                                    `}
-                                                    style={{ color: 'var(--color-text)' }}
-                                                >
-                                                    <span class="verse-num inline-block font-bold mr-2 select-none align-baseline opacity-40">
-                                                        {num}
-                                                    </span>
-                                                    <span>{verseText}</span>
-                                                </p>
-                                            );
-                                        })}
+                                                // Find if there's a title for this verse
+                                                const verseTitle = chapterTitles.find((t: any) => t.verse === verseNum);
+
+                                                return (
+                                                    <div key={num} class="space-y-4">
+                                                        {verseTitle && (
+                                                            <h3 class="text-lg font-bold text-[var(--color-text)] opacity-80 mt-8 mb-4 border-l-4 border-[var(--color-link)] pl-4">
+                                                                {verseTitle.text}
+                                                            </h3>
+                                                        )}
+                                                        <p
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                toggleHighlight(verseId);
+                                                            }}
+                                                            class={`relative p-2 -mx-2 rounded transition-all cursor-pointer verse-item group
+                                                                ${isGlobalHighlighted ? 'is-user-highlighted' : ''}
+                                                            `}
+                                                            style={{ color: 'var(--color-text)' }}
+                                                        >
+                                                            <span class="verse-num inline-block font-bold mr-2 select-none align-baseline opacity-40">
+                                                                {num}
+                                                            </span>
+                                                            <span>{verseText}</span>
+                                                        </p>
+                                                    </div>
+                                                );
+                                            });
+                                        })()}
                                     </div>
                                 )}
                             </div>
@@ -455,51 +497,62 @@ export default function ReaderView() {
             />
 
             <div class="verses space-y-4 reader-text">
-                {filteredVerses.map((verse) => {
-                    const verseId = `${bookKey}-${chapterKey}-${verse.number}`;
-                    const isGlobalHighlighted = $highlights[verseId];
+                {(() => {
+                    const chapterTitles = getChapterTitles(bookKey, chapterKey);
+                    return filteredVerses.map((verse) => {
+                        const verseId = `${bookKey}-${chapterKey}-${verse.number}`;
+                        const isGlobalHighlighted = $highlights[verseId];
+                        const verseNum = parseInt(verse.number);
+                        const verseTitle = chapterTitles.find((t: any) => t.verse === verseNum);
 
-                    return (
-                        <p
-                            key={verse.number}
-                            id={`v-${verse.number}`}
-                            onClick={() => toggleHighlight(verseId)}
-                            class={`relative p-2 -mx-2 rounded transition-all cursor-pointer verse-item group
-                                ${verse.isHighlighted ? "is-plan-highlighted" : ""} 
-                                ${isGlobalHighlighted ? 'is-user-highlighted' : ''} 
-                                ${activeNote === `v-${verse.number}` ? 'verse-selected' : ''}
-                            `}
-                            style={{ color: 'var(--color-text)' }}
-                        >
-                            <span class={`verse-num inline-block font-bold mr-2 select-none align-baseline ${verse.isHighlighted ? "text-[var(--color-link)] opacity-100" : "opacity-40"}`}>
-                                {verse.number}
-                            </span>
-                            <span class={verse.isHighlighted ? "font-medium" : ""}>
-                                {verse.text}
-                            </span>
-                            {currentChapterCommentaryVerses.some((c: any) => c.verse === parseInt(verse.number)) && (
-                                <a
-                                    href={`/commentary?book=${bookKey}&chapter=${chapterKey}#com-${verse.number}`}
-                                    class="commentary-icon inline-flex"
-                                    title="Ver comentario"
-                                    onClick={(e) => e.stopPropagation()}
+                        return (
+                            <div key={verse.number} class="space-y-4">
+                                {verseTitle && (
+                                    <h3 class="text-lg font-bold text-[var(--color-text)] opacity-80 mt-8 mb-4 border-l-4 border-[var(--color-link)] pl-4">
+                                        {verseTitle.text}
+                                    </h3>
+                                )}
+                                <p
+                                    id={`v-${verse.number}`}
+                                    onClick={() => toggleHighlight(verseId)}
+                                    class={`relative p-2 -mx-2 rounded transition-all cursor-pointer verse-item group
+                                        ${verse.isHighlighted ? "is-plan-highlighted" : ""} 
+                                        ${isGlobalHighlighted ? 'is-user-highlighted' : ''} 
+                                        ${activeNote === `v-${verse.number}` ? 'verse-selected' : ''}
+                                    `}
+                                    style={{ color: 'var(--color-text)' }}
                                 >
-                                    <Library class="w-full h-full" />
-                                </a>
-                            )}
-                            {verse.noteIndices.map((idx) => (
-                                <a
-                                    key={idx}
-                                    href={`#note-${idx}`}
-                                    class="footnote-ref"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    {idx}
-                                </a>
-                            ))}
-                        </p>
-                    );
-                })}
+                                    <span class={`verse-num inline-block font-bold mr-2 select-none align-baseline ${verse.isHighlighted ? "text-[var(--color-link)] opacity-100" : "opacity-40"}`}>
+                                        {verse.number}
+                                    </span>
+                                    <span class={verse.isHighlighted ? "font-medium" : ""}>
+                                        {verse.text}
+                                    </span>
+                                    {currentChapterCommentaryVerses.some((c: any) => c.verse === parseInt(verse.number)) && (
+                                        <a
+                                            href={`/commentary?book=${bookKey}&chapter=${chapterKey}#com-${verse.number}`}
+                                            class="commentary-icon inline-flex"
+                                            title="Ver comentario"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <Library class="w-full h-full" />
+                                        </a>
+                                    )}
+                                    {verse.noteIndices.map((idx) => (
+                                        <a
+                                            key={idx}
+                                            href={`#note-${idx}`}
+                                            class="footnote-ref"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {idx}
+                                        </a>
+                                    ))}
+                                </p>
+                            </div>
+                        );
+                    });
+                })()}
             </div>
 
             {footnotes.length > 0 && (
