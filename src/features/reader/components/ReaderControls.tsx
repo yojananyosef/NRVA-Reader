@@ -9,6 +9,7 @@ interface Book {
     code: string;
     name: string;
     chapters: number;
+    section?: string;
 }
 
 interface ReaderControlsProps {
@@ -77,6 +78,18 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
 
     const [view, setView] = useState<'settings' | 'books' | 'chapters'>('settings');
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+    const [expandedSections, setExpandedSections] = useState<string[]>(['at']);
+
+    const toggleSection = (section: string) => {
+        setExpandedSections(prev =>
+            prev.includes(section)
+                ? prev.filter(s => s !== section)
+                : [...prev, section]
+        );
+    };
+
+    const otBooks = books.filter(b => b.section === 'at');
+    const ntBooks = books.filter(b => b.section === 'nt');
 
     // Reset view when closing
     useEffect(() => {
@@ -206,10 +219,10 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
             </nav>
 
             {/* Settings Sheet (Sidebar) */}
-            <div className={`fixed inset-0 z-[60] ui-protect transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+            <div className={`fixed inset-0 z-[60] ui-protect transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} style={{ top: '4rem' }}>
                 {/* Backdrop */}
                 <div
-                    className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+                    className="absolute inset-0 bg-black/10 backdrop-blur-sm"
                     onClick={() => setIsOpen(false)}
                 />
 
@@ -534,31 +547,94 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
 
                         {/* VIEW: BOOKS */}
                         {view === 'books' && (
-                            <div className="space-y-2">
-                                {books.map((book) => (
+                            <div className="space-y-6">
+                                {/* Antiguo Testamento */}
+                                <div className="space-y-2">
                                     <div
-                                        key={book.code}
-                                        onClick={() => {
-                                            setSelectedBook(book);
-                                            setView('chapters');
-                                        }}
+                                        onClick={() => toggleSection('at')}
                                         role="button"
                                         tabIndex={0}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter' || e.key === ' ') {
-                                                setSelectedBook(book);
-                                                setView('chapters');
+                                                toggleSection('at');
                                             }
                                         }}
-                                        className="w-full text-left p-3 rounded-lg flex items-center justify-between group transition-colors cursor-pointer"
-                                        style={{ backgroundColor: 'transparent' }}
-                                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'color-mix(in srgb, var(--color-text), transparent 95%)'}
-                                        onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'}
+                                        className="flex items-center justify-between p-3 rounded-lg hover:bg-[var(--surface-hover-bg)] transition-colors cursor-pointer border border-transparent"
+                                        style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 95%)' }}
                                     >
-                                        <span className="font-medium">{book.name}</span>
-                                        <ChevronRight className="w-4 h-4 opacity-40 group-hover:opacity-60" />
+                                        <span className="font-bold text-sm uppercase tracking-wider">Antiguo Testamento</span>
+                                        <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${expandedSections.includes('at') ? 'rotate-90' : ''}`} />
                                     </div>
-                                ))}
+                                    {expandedSections.includes('at') && (
+                                        <div className="grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            {otBooks.map((book) => (
+                                                <div
+                                                    key={book.code}
+                                                    onClick={() => {
+                                                        setSelectedBook(book);
+                                                        setView('chapters');
+                                                    }}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            setSelectedBook(book);
+                                                            setView('chapters');
+                                                        }
+                                                    }}
+                                                    className="w-full text-left p-3 rounded-lg flex items-center justify-between group transition-colors cursor-pointer hover:bg-[var(--surface-hover-bg)]"
+                                                >
+                                                    <span className="font-medium">{book.name}</span>
+                                                    <ChevronRight className="w-4 h-4 opacity-40 group-hover:opacity-60" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Nuevo Testamento */}
+                                <div className="space-y-2">
+                                    <div
+                                        onClick={() => toggleSection('nt')}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                toggleSection('nt');
+                                            }
+                                        }}
+                                        className="flex items-center justify-between p-3 rounded-lg hover:bg-[var(--surface-hover-bg)] transition-colors cursor-pointer border border-transparent"
+                                        style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 95%)' }}
+                                    >
+                                        <span className="font-bold text-sm uppercase tracking-wider">Nuevo Testamento</span>
+                                        <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${expandedSections.includes('nt') ? 'rotate-90' : ''}`} />
+                                    </div>
+                                    {expandedSections.includes('nt') && (
+                                        <div className="grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            {ntBooks.map((book) => (
+                                                <div
+                                                    key={book.code}
+                                                    onClick={() => {
+                                                        setSelectedBook(book);
+                                                        setView('chapters');
+                                                    }}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            setSelectedBook(book);
+                                                            setView('chapters');
+                                                        }
+                                                    }}
+                                                    className="w-full text-left p-3 rounded-lg flex items-center justify-between group transition-colors cursor-pointer hover:bg-[var(--surface-hover-bg)]"
+                                                >
+                                                    <span className="font-medium">{book.name}</span>
+                                                    <ChevronRight className="w-4 h-4 opacity-40 group-hover:opacity-60" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
