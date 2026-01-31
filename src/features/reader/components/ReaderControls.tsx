@@ -1,9 +1,10 @@
 import { useStore } from '@nanostores/preact';
 import { useEffect, useState } from 'preact/hooks';
 import { preferences, type Theme, resetPreferences, type Preferences, PREFS_STORAGE_KEY, defaultPreferences } from '../../../stores/preferences';
-import { Settings, Type, AlignJustify, MoveHorizontal, Palette, RotateCcw, X, Sun, Moon, BookOpen, Menu, ChevronRight, Ruler, Play, MessageSquare, Quote, Check, Pause, BookSearch } from 'lucide-preact';
+import { Settings, Type, AlignJustify, MoveHorizontal, Palette, RotateCcw, X, Sun, Moon, BookOpen, Menu, ChevronRight, Ruler, Play, MessageSquare, Quote, Check, Pause, BookSearch, Search } from 'lucide-preact';
 import ReaderRuler from './ReaderRuler';
 import { useTTS } from '../hooks/useTTS';
+import { parseBibleQuery, getBookSuggestions } from '../../../utils/bibleParser';
 
 interface Book {
     code: string;
@@ -79,6 +80,59 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
     const [view, setView] = useState<'settings' | 'books' | 'chapters'>('settings');
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
     const [expandedSections, setExpandedSections] = useState<string[]>(['at']);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [suggestions, setSuggestions] = useState<Book[]>([]);
+
+    const handleSearchInput = (value: string) => {
+        setSearchQuery(value);
+
+        // Obtener última parte de la consulta si hay múltiples pasajes
+        const parts = value.split(/[;,]/);
+        const lastPart = parts[parts.length - 1].trim();
+
+        // Solo sugerir si no hay números (es decir, aún está escribiendo el nombre del libro)
+        if (lastPart && !/\d/.test(lastPart)) {
+            const matches = getBookSuggestions(lastPart);
+            setSuggestions(matches as Book[]);
+        } else {
+            setSuggestions([]);
+        }
+    };
+
+    const applySuggestion = (bookName: string) => {
+        const parts = searchQuery.split(/[;,]/);
+        parts[parts.length - 1] = ` ${bookName} `;
+        const newQuery = parts.join(';').trim() + ' ';
+        setSearchQuery(newQuery);
+        setSuggestions([]);
+        // Enfocar el input de nuevo si es necesario
+    };
+
+    const handleSearch = (e: any) => {
+        e.preventDefault();
+        if (!searchQuery.trim()) return;
+
+        const results = parseBibleQuery(searchQuery);
+        if (results.length > 0) {
+            if (results.length === 1 && !results[0].verses) {
+                // Navegación normal para un solo capítulo sin versículos específicos
+                const url = `/?book=${results[0].book}&chapter=${results[0].chapter}`;
+                window.history.pushState({}, '', url);
+                window.dispatchEvent(new CustomEvent('app:navigate', {
+                    detail: { book: results[0].book, chapter: results[0].chapter.toString() }
+                }));
+            } else {
+                // Vista Multi-Pasaje (Logos Style)
+                const searchParam = encodeURIComponent(searchQuery);
+                const url = `/?search=${searchParam}`;
+                window.history.pushState({}, '', url);
+                window.dispatchEvent(new CustomEvent('app:navigate', {
+                    detail: { search: searchQuery }
+                }));
+            }
+            setIsOpen(false);
+        }
+    };
 
     const toggleSection = (section: string) => {
         setExpandedSections(prev =>
@@ -548,6 +602,48 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                         {/* VIEW: BOOKS */}
                         {view === 'books' && (
                             <div className="space-y-6">
+                                {/* Bible Search System */}
+                                <form onSubmit={handleSearch} className="mb-6">
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                            <Search className="w-4 h-4 opacity-50 group-focus-within:text-[var(--color-link)] group-focus-within:opacity-100 transition-all" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={searchQuery}
+                                            onInput={(e) => handleSearchInput((e.target as HTMLInputElement).value)}
+                                            placeholder="Buscar..."
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl border text-sm transition-all focus:ring-2 focus:ring-[var(--color-link)] outline-none"
+                                            style={{
+                                                backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 95%)',
+                                                borderColor: 'color-mix(in srgb, var(--color-text), transparent 90%)'
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* Sugerencias Autocomplete */}
+                                    {suggestions.length > 0 && (
+                                        <div
+                                            className="mt-2 rounded-xl border shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 relative"
+                                            style={{
+                                                backgroundColor: 'var(--color-bg)',
+                                                borderColor: 'color-mix(in srgb, var(--color-text), transparent 90%)'
+                                            }}
+                                        >
+                                            {suggestions.map((book) => (
+                                                <div
+                                                    key={book.code}
+                                                    onClick={() => applySuggestion(book.name)}
+                                                    className="px-4 py-3 text-sm cursor-pointer hover:bg-[var(--color-link)] hover:text-white transition-colors flex items-center justify-between group"
+                                                >
+                                                    <span className="font-medium">{book.name}</span>
+                                                    <span className="text-[10px] opacity-50 group-hover:opacity-100 uppercase tracking-tighter">{book.code}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </form>
+
                                 {/* Antiguo Testamento */}
                                 <div className="space-y-2">
                                     <div

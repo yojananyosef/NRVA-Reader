@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'preact/hooks';
-import { BookOpen, Library, Info, EyeOff, Eye } from "lucide-preact";
+import { BookOpen, Library, Info, EyeOff, Eye, ChevronDown, ChevronUp } from "lucide-preact";
 import booksIndex from "../../../data/books-index.json";
 import { highlights, toggleHighlight } from "../../../stores/highlights";
 import { lastBiblePosition } from "../../../stores/navigation";
@@ -7,13 +7,8 @@ import { useStore } from '@nanostores/preact';
 import { fetchWithCache } from '../../../utils/fetchWithCache';
 import ArrowNavigation from '../../../components/common/ArrowNavigation';
 import { getNextChapter, getPrevChapter } from '../../../utils/navigation';
+import { parseBibleQuery, type BiblePassage } from '../../../utils/bibleParser';
 
-interface Verse {
-    number: string;
-    text: string;
-    noteIndices: number[];
-    isHighlighted: boolean;
-}
 
 export default function ReaderView() {
     const [bookData, setBookData] = useState<any>(null);
@@ -24,7 +19,11 @@ export default function ReaderView() {
 
     // Get params from URL
     const [activeNote, setActiveNote] = useState<string | null>(null);
-    const [params, setParams] = useState({ book: 'gen', chapter: '1', verses: '' });
+    const [params, setParams] = useState({ book: 'gen', chapter: '1', verses: '', search: '' });
+    const [searchResults, setSearchResults] = useState<BiblePassage[]>([]);
+    const [multiPassageData, setMultiPassageData] = useState<Record<string, any>>({});
+    const [collapsedPassages, setCollapsedPassages] = useState<Record<string, boolean>>({});
+    const [isSearching, setIsSearching] = useState(false);
 
     useEffect(() => {
         const handleHashChange = () => {
@@ -44,16 +43,35 @@ export default function ReaderView() {
     useEffect(() => {
         const updateParams = () => {
             const searchParams = new URLSearchParams(window.location.search);
+            const search = searchParams.get('search') || '';
             setParams({
                 book: searchParams.get('book') || 'gen',
                 chapter: searchParams.get('chapter') || '1',
-                verses: searchParams.get('verses') || ''
+                verses: searchParams.get('verses') || '',
+                search
             });
+
+            if (search) {
+                const parsed = parseBibleQuery(search);
+                setSearchResults(parsed);
+                setIsSearching(true);
+            } else {
+                setIsSearching(false);
+                setSearchResults([]);
+            }
         };
 
         const handleAppNavigate = (e: any) => {
-            const { book, chapter, verses } = e.detail;
-            setParams({ book, chapter: chapter || '1', verses: verses || '' });
+            if (e.detail.search) {
+                setParams(p => ({ ...p, search: e.detail.search }));
+                const parsed = parseBibleQuery(e.detail.search);
+                setSearchResults(parsed);
+                setIsSearching(true);
+            } else {
+                const { book, chapter, verses } = e.detail;
+                setParams({ book, chapter: chapter || '1', verses: verses || '', search: '' });
+                setIsSearching(false);
+            }
         };
 
         updateParams();
@@ -70,8 +88,39 @@ export default function ReaderView() {
         return booksIndex.find((b) => b.code === bookKey) || booksIndex[0];
     }, [bookKey]);
 
-    // Load book data only when bookKey changes
+    // Load multi-passage data when search results change
     useEffect(() => {
+        if (!isSearching || searchResults.length === 0) return;
+
+        let isMounted = true;
+        async function loadMultiData() {
+            setLoading(true);
+
+            try {
+                const uniqueBooks = Array.from(new Set(searchResults.map(r => r.book)));
+                const bookRequests = uniqueBooks.map(code => fetchWithCache<any>(`/data/books/${code}.json`));
+                const booksResults = await Promise.all(bookRequests);
+
+                const bookMap = uniqueBooks.reduce((acc, code, i) => {
+                    acc[code] = booksResults[i];
+                    return acc;
+                }, {} as Record<string, any>);
+
+                setMultiPassageData(bookMap);
+            } catch (e) {
+                console.error("Error loading multi-passage data:", e);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        }
+
+        loadMultiData();
+        return () => { isMounted = false; };
+    }, [isSearching, searchResults]);
+
+    // Load book data only when bookKey changes (normal mode)
+    useEffect(() => {
+        if (isSearching) return;
         let isMounted = true;
         async function loadBookData() {
             // Only show loading if we don't have the data for this book yet
@@ -115,7 +164,6 @@ export default function ReaderView() {
     };
 
     const currentChapNum = safeParseInt(chapterKey) || 1;
-    const currentBookIndex = booksIndex.findIndex((b) => b.code === currentBookEntry.code);
 
     const prevLink = useMemo(() => {
         const target = getPrevChapter(bookKey, currentChapNum);
@@ -190,7 +238,7 @@ export default function ReaderView() {
     }, [chapterData, requiredVerses]);
 
     const { versesList, footnotes } = processedData;
-    
+
     const highlightedCount = versesList.filter((v) => v.isHighlighted).length;
 
     const currentCommentaryChapter = commentaryData?.chapters?.find(
@@ -246,6 +294,96 @@ export default function ReaderView() {
         );
     }
 
+    if (isSearching) {
+        return (
+            <article class="reader-content max-w-3xl mx-auto pb-12 px-2 md:px-0 relative animate-in fade-in duration-700">
+                <div class="space-y-12">
+                    {searchResults.map((result, idx) => {
+                        const book = multiPassageData[result.book];
+                        if (!book) return null;
+
+                        const chapterData = book.capitulo?.[result.chapter];
+                        if (!chapterData) return null;
+
+                        const bookEntry = booksIndex.find(b => b.code === result.book);
+                        const passageId = `${result.book}-${result.chapter}-${idx}`;
+                        const isCollapsed = collapsedPassages[passageId];
+
+                        // Filtrar versículos si hay un rango específico
+                        const versesToRender = Object.entries(chapterData)
+                            .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+                            .filter(([num]) => !result.verses || result.verses.includes(parseInt(num)));
+
+                        return (
+                            <div key={passageId} class="space-y-4">
+                                <div
+                                    class="flex items-center gap-4 mb-2 sticky top-16 bg-[var(--color-bg)]/80 backdrop-blur-sm py-2 z-10 cursor-pointer group"
+                                    onClick={() => setCollapsedPassages(prev => ({ ...prev, [passageId]: !prev[passageId] }))}
+                                >
+                                    <h2 class="text-xl font-bold text-[var(--color-link)] flex items-center gap-2">
+                                        {bookEntry?.name} {result.chapter}
+                                        {result.verses && result.verses.length > 0 && (
+                                            <span class="text-sm font-normal opacity-60">
+                                                (v. {result.verses[0]}{result.verses.length > 1 ? `-${result.verses[result.verses.length - 1]}` : ''})
+                                            </span>
+                                        )}
+                                        <span class="opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                                            {isCollapsed ? <ChevronDown class="w-5 h-5" /> : <ChevronUp class="w-5 h-5" />}
+                                        </span>
+                                    </h2>
+                                    <div class="h-px flex-1 bg-[var(--color-link)]/20" />
+                                </div>
+
+                                {!isCollapsed && (
+                                    <div class="verses space-y-4 reader-text animate-in slide-in-from-top-2 duration-300">
+                                        {versesToRender.map(([num, content]) => {
+                                            const verseText = typeof content === "string" ? content : (content as any).texto || "";
+                                            const verseId = `${result.book}-${result.chapter}-${num}`;
+                                            const isGlobalHighlighted = $highlights[verseId];
+
+                                            return (
+                                                <p
+                                                    key={num}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        toggleHighlight(verseId);
+                                                    }}
+                                                    class={`relative p-2 -mx-2 rounded transition-all cursor-pointer verse-item group
+                                                        ${isGlobalHighlighted ? 'is-user-highlighted' : ''}
+                                                    `}
+                                                    style={{ color: 'var(--color-text)' }}
+                                                >
+                                                    <span class="verse-num inline-block font-bold mr-2 select-none align-baseline opacity-40">
+                                                        {num}
+                                                    </span>
+                                                    <span>{verseText}</span>
+                                                </p>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div class="mt-12 pt-8 border-t border-theme-text/20 text-center">
+                    <button
+                        onClick={() => {
+                            window.history.pushState({}, '', '/');
+                            window.dispatchEvent(new CustomEvent('app:navigate', {
+                                detail: { book: 'gen', chapter: '1' }
+                            }));
+                        }}
+                        class="px-6 py-2 rounded-full border border-[var(--color-link)] text-[var(--color-link)] hover:bg-[var(--color-link)]/5 transition-colors"
+                    >
+                        Volver
+                    </button>
+                </div>
+            </article>
+        );
+    }
+
     const filteredVerses = viewMode === 'partial' ? versesList.filter(v => v.isHighlighted) : versesList;
 
     const handleNavigate = (url: string) => {
@@ -258,7 +396,7 @@ export default function ReaderView() {
         window.history.pushState({}, '', url);
 
         // Actualizar estado local
-        setParams({ book, chapter, verses });
+        setParams({ book, chapter, verses, search: '' });
 
         // Hacer scroll arriba instantáneo para mejor sensación de inmediatez
         window.scrollTo(0, 0);
