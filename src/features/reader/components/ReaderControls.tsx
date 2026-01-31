@@ -61,6 +61,16 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                 console.error('Error syncing preferences on mount', e);
             }
         }
+
+        // Cerrar controles si se abre el sidebar
+        const handleToggleSidebar = () => {
+            setIsOpen(false);
+        };
+        window.addEventListener('toggle-sidebar', handleToggleSidebar);
+
+        return () => {
+            window.removeEventListener('toggle-sidebar', handleToggleSidebar);
+        };
     }, []);
 
     // Update rate from prefs
@@ -191,6 +201,26 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                 <div className="flex gap-2">
                     <div
                         onClick={() => {
+                            setIsOpen(false);
+                            window.dispatchEvent(new CustomEvent('toggle-sidebar'));
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                window.dispatchEvent(new CustomEvent('toggle-sidebar'));
+                            }
+                        }}
+                        className="p-2 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors flex md:hidden items-center gap-2 cursor-pointer"
+                        aria-label="Alternar menú lateral"
+                    >
+                        <Menu className="w-6 h-6" />
+                    </div>
+
+                    <div className="h-8 w-px bg-[var(--color-link)]/10 mx-1 hidden md:block" />
+
+                    <div
+                        onClick={() => {
                             play('.reader-content p, .reader-content h1', handleAutoPlay);
                         }}
                         onContextMenu={(e) => {
@@ -235,22 +265,6 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                         <BookSearch className="w-6 h-6" />
                     </div>
 
-                    <div
-                        onClick={() => {
-                            window.dispatchEvent(new CustomEvent('toggle-sidebar'));
-                        }}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                window.dispatchEvent(new CustomEvent('toggle-sidebar'));
-                            }
-                        }}
-                        className="p-2 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors flex md:hidden items-center gap-2 cursor-pointer"
-                        aria-label="Alternar menú lateral"
-                    >
-                        <Menu className="w-6 h-6" />
-                    </div>
                     <div
                         onClick={() => {
                             setView('settings');
