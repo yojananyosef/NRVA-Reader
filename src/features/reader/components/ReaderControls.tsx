@@ -1,10 +1,9 @@
 import { useStore } from '@nanostores/preact';
 import { useEffect, useState } from 'preact/hooks';
 import { preferences, type Theme, resetPreferences, type Preferences, PREFS_STORAGE_KEY, defaultPreferences } from '../../../stores/preferences';
-import { Settings, Type, AlignJustify, MoveHorizontal, Palette, RotateCcw, X, Sun, Moon, BookOpen, Menu, ChevronRight, Ruler, Play, Square, MessageSquare, Quote, Check, Pause } from 'lucide-preact';
+import { Settings, Type, AlignJustify, MoveHorizontal, Palette, RotateCcw, X, Sun, Moon, BookOpen, Menu, ChevronRight, Ruler, Play, MessageSquare, Quote, Check, Pause, BookSearch } from 'lucide-preact';
 import ReaderRuler from './ReaderRuler';
 import { useTTS } from '../hooks/useTTS';
-import { applyThemeToDocument } from '../scripts/theme-manager';
 
 interface Book {
     code: string;
@@ -26,7 +25,7 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
         const nextBtn = document.querySelector('[data-nav-next]') as HTMLElement;
         if (nextBtn) {
             nextBtn.click();
-            
+
             // Re-intentar encontrar contenido para empezar a leer
             let retries = 0;
             const tryPlay = () => {
@@ -38,7 +37,7 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                     setTimeout(tryPlay, 500);
                 }
             };
-            
+
             setTimeout(tryPlay, 1000);
         }
     };
@@ -94,13 +93,13 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
             const isCommentary = window.location.pathname.includes('/commentary');
             const baseUrl = isCommentary ? '/commentary' : '/';
             const url = `${baseUrl}?book=${selectedBook.code}&chapter=${chapter}`;
-            
+
             // Si ya estamos en la misma página (Biblia o Comentario), navegar sin recargar
             const currentPath = window.location.pathname;
             if (currentPath === baseUrl || (currentPath === '/' && baseUrl === '/')) {
                 window.history.pushState({}, '', url);
-                window.dispatchEvent(new CustomEvent('app:navigate', { 
-                    detail: { url, book: selectedBook.code, chapter: String(chapter) } 
+                window.dispatchEvent(new CustomEvent('app:navigate', {
+                    detail: { url, book: selectedBook.code, chapter: String(chapter) }
                 }));
             } else {
                 // Si cambiamos entre Biblia y Comentario, recarga normal (o dejar que View Transitions actúe)
@@ -163,10 +162,10 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                                 setIsOpen(true);
                             }
                         }}
-                        className="p-2 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors flex items-center gap-2 cursor-pointer"
+                        className="p-2 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors cursor-pointer"
                         aria-label="Abrir navegación de libros"
                     >
-                        <span className="text-sm font-semibold">Libros</span>
+                        <BookSearch className="w-6 h-6" />
                     </div>
 
                     <div
@@ -318,17 +317,17 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                                                 <span className="font-medium text-sm">Velocidad de Voz</span>
                                             </div>
                                             <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--surface-muted-border)', fontSize: '12px' }}>x{$preferences.speechRate}</span>
-                    </div>
-                    <input
-                        type="range"
-                        min="0.5"
-                        max="2"
-                        step="0.1"
-                        value={$preferences.speechRate}
-                        onInput={(e) => update('speechRate', Number((e.target as HTMLInputElement).value))}
-                        className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
-                        style={{ backgroundColor: 'var(--surface-muted-border)', height: '8px' }}
-                    />
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="0.5"
+                                            max="2"
+                                            step="0.1"
+                                            value={$preferences.speechRate}
+                                            onInput={(e) => update('speechRate', Number((e.target as HTMLInputElement).value))}
+                                            className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
+                                            style={{ backgroundColor: 'var(--surface-muted-border)', height: '8px' }}
+                                        />
                                     </div>
 
                                     {/* Skip Options */}
