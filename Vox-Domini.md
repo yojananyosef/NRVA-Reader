@@ -23,9 +23,13 @@ Mateo estructura las palabras de Jesús en cinco grandes discursos que emulan lo
 - **Mt 4:19**: "Vengan y síganme, y yo les enseñaré cómo pescar personas."
 
 ### 1.2 El Primer Discurso: El Sermón del Monte (Mateo 5-7)
-- **Mt 5:3-12**: Las Bienaventuranzas.
-- **Mt 5:13-16**: Sal y Luz del mundo.
-- **Mt 5:17-20**: Cumplimiento de la Ley.
+- **Mt 5:3-16**: Las bienaventuranzas.
+- **Mt 5:17-20**: Jesús cumple la ley y los profetas.
+- **Mt 5:21-26**: Enseñanza de Jesús sobre el odio.
+- **Mt 5:27-32**: Enseñanza de Jesús sobre el adulterio.
+- **Mt 5:33-37**: Enseñanza de Jesús sobre el juramento falso.
+- **Mt 5:38-42**: Enseñanza de Jesús sobre la venganza.
+- **Mt 5:43-48**: El amor verdadero y su recompensa.
 - **Mt 6:9-13**: El Padre Nuestro.
 - **Mt 7:12**: La Regla de Oro.
 
