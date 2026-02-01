@@ -8,6 +8,8 @@ import { fetchWithCache } from '../../../utils/fetchWithCache';
 import ArrowNavigation from '../../../components/common/ArrowNavigation';
 import { getNextChapter, getPrevChapter } from '../../../utils/navigation';
 import { parseBibleQuery, type BiblePassage } from '../../../utils/bibleParser';
+import { formatRedLetters } from '../../../utils/redLetterUtils';
+import { preferences } from '../../../stores/preferences';
 
 
 export default function ReaderView() {
@@ -16,6 +18,7 @@ export default function ReaderView() {
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'full' | 'partial'>('full');
     const $highlights = useStore(highlights);
+    const $preferences = useStore(preferences);
 
     // Get params from URL
     const [activeNote, setActiveNote] = useState<string | null>(null);
@@ -396,7 +399,11 @@ export default function ReaderView() {
                                                             <span class="verse-num inline-block font-bold mr-2 select-none align-baseline opacity-40">
                                                                 {num}
                                                             </span>
-                                                            <span>{verseText}</span>
+                                                            <span dangerouslySetInnerHTML={{
+                                                                __html: $preferences.showRedLetters
+                                                                    ? formatRedLetters(verseText, result.book, result.chapter, verseNum)
+                                                                    : verseText
+                                                            }} />
                                                         </p>
                                                     </div>
                                                 );
@@ -525,9 +532,14 @@ export default function ReaderView() {
                                     <span class={`verse-num inline-block font-bold mr-2 select-none align-baseline ${verse.isHighlighted ? "text-[var(--color-link)] opacity-100" : "opacity-40"}`}>
                                         {verse.number}
                                     </span>
-                                    <span class={verse.isHighlighted ? "font-medium" : ""}>
-                                        {verse.text}
-                                    </span>
+                                    <span
+                                        class={verse.isHighlighted ? "font-medium" : ""}
+                                        dangerouslySetInnerHTML={{
+                                            __html: $preferences.showRedLetters
+                                                ? formatRedLetters(verse.text, bookKey, currentChapNum, verseNum)
+                                                : verse.text
+                                        }}
+                                    />
                                     {currentChapterCommentaryVerses.some((c: any) => c.verse === parseInt(verse.number)) && (
                                         <a
                                             href={`/commentary?book=${bookKey}&chapter=${chapterKey}#com-${verse.number}`}

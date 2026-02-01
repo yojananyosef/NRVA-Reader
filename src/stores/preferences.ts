@@ -15,6 +15,7 @@ export interface Preferences {
     speechRate: number;
     skipVerses: boolean;
     skipFootnotes: boolean;
+    showRedLetters: boolean;
 }
 
 export const defaultPreferences: Preferences = {
@@ -27,7 +28,8 @@ export const defaultPreferences: Preferences = {
     rulerEnabled: false,
     speechRate: 1.0,
     skipVerses: true,
-    skipFootnotes: true
+    skipFootnotes: true,
+    showRedLetters: true
 };
 
 let initialPrefs = defaultPreferences;

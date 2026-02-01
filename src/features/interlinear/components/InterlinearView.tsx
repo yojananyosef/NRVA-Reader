@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from "preact/hooks";
-import { Info, ExternalLink, ChevronDown, Book, Hash, Check } from "lucide-preact";
-import type { InterlinearWord, InterlinearVerse, InterlinearData } from "../types";
+import { Info, ChevronDown, Book, Hash, Check } from "lucide-preact";
+import type { InterlinearVerse, InterlinearData } from "../types";
 import booksIndex from "../../../data/books-index.json";
 import { lastInterlinearPosition } from "../../../stores/navigation";
 import { useStore } from "@nanostores/preact";
 import { preferences } from "../../../stores/preferences";
 import { fetchWithCache } from "../../../utils/fetchWithCache";
 import ArrowNavigation from "../../../components/common/ArrowNavigation";
+import { formatRedLetters } from "../../../utils/redLetterUtils";
 
 const bookMapping: Record<string, string> = {
   gen: "genesis",
@@ -50,9 +51,9 @@ const bookMapping: Record<string, string> = {
   mal: "malachi",
   // New Testament
   mat: "matthew",
-  mar: "mark",
+  mrk: "mark",
   luk: "luke",
-  joh: "john",
+  jhn: "john",
   act: "acts",
   rom: "romans",
   "1co": "1-corinthians",
@@ -534,9 +535,12 @@ export default function InterlinearView() {
                       fontSize: `clamp(16px, ${$preferences.fontSize * 1.1}px, 28px)`,
                       /* Eliminamos line-height y letter-spacing inline para que mande el CSS con clamp */
                     }}
-                  >
-                    {spanishVerse}
-                  </p>
+                    dangerouslySetInnerHTML={{
+                      __html: $preferences.showRedLetters
+                        ? formatRedLetters(spanishVerse, params.book, parseInt(params.chapter), parseInt(params.verse))
+                        : spanishVerse
+                    }}
+                  />
                 </div>
               </div>
             )}

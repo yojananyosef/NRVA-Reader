@@ -1,4 +1,4 @@
-# Astro Reader: Lectura Accesible para Dislexia
+# Aaccessible Reading: Lectura Accesible para Dislexia
 
 Aplicación web construida con Astro y Preact que ofrece una experiencia de lectura optimizada para personas con dislexia y dificultades cognitivas. Integra recomendaciones tipográficas y de UX basadas en evidencia científica, con controles de personalización en tiempo real y lectura en voz alta (TTS).
 
@@ -13,6 +13,12 @@ Referencia técnica y base conceptual: `c:\Users\Usuario\Desktop\astro-reader\po
 5. Navegación por libros y capítulos con URL semánticas (`/?book=...&chapter=...`).
 6. Resaltado de versículos y guardado local de preferencias y marcas (`localStorage`).
 7. Carga dinámica de datos por libro para rendimiento y memoria optimizados.
+8. **Sistema de Letras Rojas (Red Letter Edition)**:
+   - Resaltado automático de las palabras de Jesús en color rojo (personalizable).
+   - **Nota**: Esta característica está actualmente en desarrollo y se está implementando manualmente versículo por versículo para garantizar la máxima precisión. Por ahora, solo algunos capítulos de Mateo están disponibles.
+   - Mapeo preciso por versículo para evitar resaltados incorrectos en narrativas.
+   - Lógica inteligente de "split" para separar palabras de Jesús de la narrativa en un mismo versículo.
+   - Detección automática de hablantes para excluir respuestas de otros personajes (ej. Mateo 9:28).
 
 ## Instalación y Configuración
 

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "preact/hooks";
 import { ChevronLeft, X, Check, Eye, EyeOff, Info } from "lucide-preact";
 import { fetchWithCache } from "../../../utils/fetchWithCache";
+import { formatRedLetters } from "../../../utils/redLetterUtils";
+import { preferences } from "../../../stores/preferences";
+import { useStore } from "@nanostores/preact";
 
 type Reading = { label: string; book: string; chapter: number; verses?: string };
 type EGWReading = { label: string; link?: string; content?: string; chapterId?: number };
@@ -38,6 +41,7 @@ export default function PlanDay({
   description,
   dayTitle,
 }: Props) {
+  const $preferences = useStore(preferences);
   const [localReadings, setLocalReadings] = useState<Reading[]>(readings);
   const [localEgwReadings, setLocalEgwReadings] = useState<EGWReading[]>(egwReadings || []);
   const [localDescription, setLocalDescription] = useState(description);
@@ -153,7 +157,6 @@ export default function PlanDay({
       const set = new Set<number>(plan.completedDays);
 
       const perDay = plan.perDay || {};
-      const currentDayData = perDay[day] || { readingsCompleted: [] };
 
       if (willComplete) {
         set.add(day);
@@ -571,7 +574,14 @@ export default function PlanDay({
                         <sup className={`text-xs font-bold mt-2 select-none min-w-[1.5rem] text-right ${v.isHighlighted ? "text-[var(--color-link)] opacity-100" : "opacity-40"}`}>
                           {v.number}
                         </sup>
-                        <p className={`flex-1 m-0 ${v.isHighlighted ? "font-medium" : "opacity-80"}`}>{v.text}</p>
+                        <p
+                          className={`flex-1 m-0 ${v.isHighlighted ? "font-medium" : "opacity-80"}`}
+                          dangerouslySetInnerHTML={{
+                            __html: $preferences.showRedLetters && openReading
+                              ? formatRedLetters(v.text, openReading.book, openReading.chapter, parseInt(v.number))
+                              : v.text
+                          }}
+                        />
                       </div>
                     ))}
                 </div>
