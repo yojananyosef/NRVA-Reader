@@ -1,4 +1,4 @@
-﻿# Vox Domini: Un Análisis Exhaustivo y Canónico de las Palabras de Jesucristo en la Escritura
+# Vox Domini: Un Análisis Exhaustivo y Canónico de las Palabras de Jesucristo en la Escritura
 
 ## Introducción: La Búsqueda de la Ipsissima Verba en el Canon Bíblico
 
@@ -43,7 +43,21 @@ Mateo estructura las palabras de Jesús en cinco grandes discursos que emulan lo
 - **Mt 7:15-23**: Cómo conocer a los falsos profetas.
 - **Mt 7:24-27**: Los dos cimientos.
 
-### 1.3 El Segundo Discurso: La Misión Apostólica (Mateo 10)
+### 1.3 Los Milagros y el Llamado (Mateo 8-9)
+- **Mt 8:1-4**: Curación de un leproso.
+- **Mt 8:5-13**: Jesús sana al criado del centurión.
+- **Mt 8:14-17**: Jesús sana a la suegra de Pedro y a muchos otros.
+- **Mt 8:18-22**: Lo que demanda el discipulado.
+- **Mt 8:23-27**: Jesús calma la tempestad.
+- **Mt 8:28-34**: Los endemoniados gadarenos.
+- **Mt 9:1-8**: Curación de un paralítico.
+- **Mt 9:9-13**: Llamamiento de Mateo y la cena en su casa.
+- **Mt 9:14-17**: Pregunta sobre el ayuno.
+- **Mt 9:18-26**: Curación de una mujer y resurrección de la hija de un oficial.
+- **Mt 9:27-34**: Curación de dos ciegos y un mudo.
+- **Mt 9:35-38**: Ministerio de Jesús.
+
+### 1.4 El Segundo Discurso: La Misión Apostólica (Mateo 10)
 - **Mt 10:16**: "He aquí, yo os envío como a ovejas en medio de lobos."
 - **Mt 10:34**: "No penséis que he venido para traer paz a la tierra; no he venido para traer paz, sino espada."
 
