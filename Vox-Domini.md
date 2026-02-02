@@ -58,8 +58,16 @@ Mateo estructura las palabras de Jesús en cinco grandes discursos que emulan lo
 - **Mt 9:35-38**: Ministerio de Jesús.
 
 ### 1.4 El Segundo Discurso: La Misión Apostólica (Mateo 10)
-- **Mt 10:16**: "He aquí, yo os envío como a ovejas en medio de lobos."
-- **Mt 10:34**: "No penséis que he venido para traer paz a la tierra; no he venido para traer paz, sino espada."
+- **Mt 10:5-15**: Jesús envía a los doce.
+- **Mt 10:16-23**: Advertencias a los doce.
+- **Mt 10:24-33**: Palabras de aliento a los doce.
+- **Mt 10:34-42**: El costo del discipulado.
+
+### 1.5 Controversias y la Invitación (Mateo 11-12)
+- **Mt 11:1-6**: Jesús y los discípulos de Juan.
+- **Mt 11:7-19**: Jesús habla de Juan el Bautista.
+- **Mt 11:20-24**: Ayes sobre ciudades de Galilea.
+- **Mt 11:25-30**: La gran invitación.
 
 ---
 
