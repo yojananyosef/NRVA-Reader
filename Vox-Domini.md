@@ -30,8 +30,18 @@ Mateo estructura las palabras de Jesús en cinco grandes discursos que emulan lo
 - **Mt 5:33-37**: Enseñanza de Jesús sobre el juramento falso.
 - **Mt 5:38-42**: Enseñanza de Jesús sobre la venganza.
 - **Mt 5:43-48**: El amor verdadero y su recompensa.
-- **Mt 6:9-13**: El Padre Nuestro.
+- **Mt 6:1**: La verdadera observancia de la religión.
+- **Mt 6:2-4**: Las ofrendas.
+- **Mt 6:5-8**: La oración.
+- **Mt 6:9-15**: El Padre nuestro.
+- **Mt 6:16-18**: El ayuno.
+- **Mt 6:19-34**: El verdadero tesoro.
+- **Mt 7:1-6**: El juicio hacia los demás.
+- **Mt 7:7-11**: La oración recibirá respuesta.
 - **Mt 7:12**: La Regla de Oro.
+- **Mt 7:13-14**: Dos puertas y dos sendas.
+- **Mt 7:15-23**: Cómo conocer a los falsos profetas.
+- **Mt 7:24-27**: Los dos cimientos.
 
 ### 1.3 El Segundo Discurso: La Misión Apostólica (Mateo 10)
 - **Mt 10:16**: "He aquí, yo os envío como a ovejas en medio de lobos."
