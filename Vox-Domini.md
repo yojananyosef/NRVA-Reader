@@ -68,6 +68,25 @@ Mateo estructura las palabras de Jesús en cinco grandes discursos que emulan lo
 - **Mt 11:7-19**: Jesús habla de Juan el Bautista.
 - **Mt 11:20-24**: Ayes sobre ciudades de Galilea.
 - **Mt 11:25-30**: La gran invitación.
+- **Mt 12:1-8**: Jesús, Señor del día de reposo.
+- **Mt 12:9-14**: Jesús sana al hombre de la mano seca.
+- **Mt 12:15-21**: Jesús, el siervo escogido.
+- **Mt 12:22-37**: Jesús y Beelzebú.
+- **Mt 12:38-45**: Escribas y fariseos demandan señal.
+- **Mt 12:46-50**: La madre y los hermanos de Jesús.
+
+### 1.6 El Discurso de las Parábolas (Mateo 13)
+- **Mt 13:1-9**: Parábola del sembrador.
+- **Mt 13:10-17**: Propósito de las parábolas.
+- **Mt 13:18-23**: Explicación de la parábola del sembrador.
+- **Mt 13:24-30**: Parábola del trigo y la cizaña.
+- **Mt 13:31-32**: Parábola del grano de mostaza.
+- **Mt 13:33**: Parábola de la levadura.
+- **Mt 13:36-43**: Explicación de la parábola del trigo y la cizaña.
+- **Mt 13:44-46**: Parábolas del tesoro escondido y la perla de gran valor.
+- **Mt 13:47-50**: Parábola de la red barredera.
+- **Mt 13:51-52**: Parábola del dueño de casa.
+- **Mt 13:53-58**: Jesús en Nazaret.
 
 ---
 
