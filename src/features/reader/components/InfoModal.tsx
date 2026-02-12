@@ -28,7 +28,7 @@ export default function InfoModal({ isOpen, onClose }: Props) {
             >
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b shrink-0" style={{ borderColor: "color-mix(in srgb, var(--color-text), transparent 90%)" }}>
-                    <h3 className="text-xl font-bold tracking-tight text-[var(--color-link)]">Información y Contacto</h3>
+                    <h3 className="text-xl font-bold tracking-tight text-[var(--color-link)]">Información</h3>
                     <div
                         onClick={onClose}
                         role="button"
@@ -68,7 +68,7 @@ export default function InfoModal({ isOpen, onClose }: Props) {
                                         textDecoration: 'none'
                                     }}
                                 >
-                                    Donar con Flow <ExternalLink className="w-4 h-4" style={{ color: "var(--color-bg)" }} />
+                                    Donar <ExternalLink className="w-4 h-4" style={{ color: "var(--color-bg)" }} />
                                 </a>
                             </div>
                         </div>
@@ -179,7 +179,7 @@ export default function InfoModal({ isOpen, onClose }: Props) {
                         }}
                     >
                         <MessageSquare className="w-5 h-5" style={{ color: "var(--color-bg)" }} />
-                        Contactar por WhatsApp
+                        Contactar
                     </a>
                 </div>
             </div>

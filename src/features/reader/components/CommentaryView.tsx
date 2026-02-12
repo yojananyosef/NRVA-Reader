@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'preact/hooks';
-import { BookOpen, Library } from "lucide-preact";
+import { Library } from "lucide-preact";
 import booksIndex from "../../../data/books-index.json";
 import { lastCommentaryPosition } from "../../../stores/navigation";
 import CommentarySelector from "./CommentarySelector";
@@ -32,9 +32,21 @@ export default function CommentaryView() {
     useEffect(() => {
         const updateParams = () => {
             const searchParams = new URLSearchParams(window.location.search);
+            let book = searchParams.get('book');
+            let chapter = searchParams.get('chapter');
+
+            // Si no hay parámetros en la URL, intentar cargar del estado persistente
+            if (!book) {
+                const stored = lastCommentaryPosition.get();
+                if (stored.lastBook) {
+                    book = stored.lastBook;
+                    chapter = stored.lastChapter;
+                }
+            }
+
             setParams({
-                book: searchParams.get('book') || 'gen',
-                chapter: searchParams.get('chapter') || '1'
+                book: book || 'gen',
+                chapter: chapter || '1'
             });
         };
 
@@ -53,6 +65,17 @@ export default function CommentaryView() {
     }, []);
 
     const { book: bookKey, chapter: chapterKey } = params;
+
+    // Sincronizar estado persistente con la posición actual
+    useEffect(() => {
+        if (bookKey && chapterKey) {
+            lastCommentaryPosition.set({
+                lastBook: bookKey,
+                lastChapter: chapterKey
+            });
+        }
+    }, [bookKey, chapterKey]);
+
     const currentBookEntry = useMemo(() => {
         return booksIndex.find((b) => b.code === bookKey) || booksIndex[0];
     }, [bookKey]);
@@ -89,7 +112,6 @@ export default function CommentaryView() {
         lastCommentaryPosition.set({ lastBook: bookKey, lastChapter: chapterKey });
     }, [bookKey, chapterKey]);
 
-    const currentBookIndex = booksIndex.findIndex((b) => b.code === currentBookEntry.code);
 
     const prevLink = useMemo(() => {
         const target = getPrevChapter(bookKey, currentChapNumInt);
@@ -228,7 +250,7 @@ export default function CommentaryView() {
                 )}
 
                 {currentChapterCommentaryVerses.length > 0 ? (
-                    currentChapterCommentaryVerses.map((v: any, idx: number) => (
+                    currentChapterCommentaryVerses.map((v: any, _idxx: number) => (
                         <div
                             id={`com-${v.verse}`}
                             key={v.verse}

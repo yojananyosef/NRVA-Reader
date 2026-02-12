@@ -12,8 +12,45 @@ const books = booksIndex;
     <head>
         <meta charset="utf-8" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#2D3142" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Biblia Accesible</title>
+
+        <!-- Meta Tags para redes sociales y WhatsApp -->
+        <title>Lectura Accesible - Biblia, Interlineal y Comentario</title>
+        <meta
+            name="description"
+            content="Plataforma de estudio bíblico con interlineal Hebreo/Griego, Comentario Bíblico Adventista (CBA) y herramientas de análisis accesibles."
+        />
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta
+            property="og:url"
+            content="https://lectura-accesible.vercel.app/"
+        />
+        <meta
+            property="og:title"
+            content="Lectura Accesible - Biblia e Interlineal"
+        />
+        <meta
+            property="og:description"
+            content="Estudio profundo de las Escrituras con idiomas originales y el Comentario Bíblico Adventista."
+        />
+        <meta property="og:image" content="/pwa-icon.svg" />
+
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta
+            property="twitter:title"
+            content="Lectura Accesible - Biblia e Interlineal"
+        />
+        <meta
+            property="twitter:description"
+            content="Estudio profundo de las Escrituras con idiomas originales y el Comentario Bíblico Adventista."
+        />
+        <meta property="twitter:image" content="/pwa-icon.svg" />
+
         <ViewTransitions />
         <style is:inline>
             :root {
@@ -39,7 +76,7 @@ const books = booksIndex;
                 min-height: 100vh;
             }
 
-            .grid-nav { 
+            .grid-nav {
                 grid-area: nav;
                 position: sticky;
                 top: 0;
@@ -47,7 +84,7 @@ const books = booksIndex;
                 height: 4rem;
                 background-color: var(--color-bg);
             }
-            .grid-sidebar { 
+            .grid-sidebar {
                 grid-area: sidebar;
                 position: sticky;
                 top: 4rem;
@@ -57,7 +94,7 @@ const books = booksIndex;
                 background-color: var(--color-bg);
                 overflow: hidden;
             }
-            .grid-main { 
+            .grid-main {
                 grid-area: main;
                 min-width: 0;
             }
@@ -160,12 +197,9 @@ const books = booksIndex;
 
         <div class="app-grid" transition:animate="none">
             <header class="grid-nav" transition:persist="app-header">
-                <ReaderControls 
-                    client:only="preact" 
-                    books={books} 
-                />
+                <ReaderControls client:only="preact" books={books} />
             </header>
-            
+
             <aside class="grid-sidebar" transition:persist="app-sidebar">
                 <SidebarNav
                     client:only="preact"

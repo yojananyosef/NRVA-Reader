@@ -61,10 +61,25 @@ export default function ReaderView() {
         const updateParams = () => {
             const searchParams = new URLSearchParams(window.location.search);
             const search = searchParams.get('search') || '';
+
+            let book = searchParams.get('book');
+            let chapter = searchParams.get('chapter');
+            let verses = searchParams.get('verses') || '';
+
+            // Si no hay parámetros en la URL, intentar cargar del estado persistente
+            if (!book && !search) {
+                const stored = lastBiblePosition.get();
+                if (stored.lastBook) {
+                    book = stored.lastBook;
+                    chapter = stored.lastChapter;
+                    verses = stored.lastVerse || '';
+                }
+            }
+
             setParams({
-                book: searchParams.get('book') || 'gen',
-                chapter: searchParams.get('chapter') || '1',
-                verses: searchParams.get('verses') || '',
+                book: book || 'gen',
+                chapter: chapter || '1',
+                verses: verses || '',
                 search
             });
 
@@ -101,6 +116,18 @@ export default function ReaderView() {
     }, []);
 
     const { book: bookKey, chapter: chapterKey, verses: versesRange } = params;
+
+    // Sincronizar estado persistente con la posición actual
+    useEffect(() => {
+        if (!isSearching && bookKey && chapterKey) {
+            lastBiblePosition.set({
+                lastBook: bookKey,
+                lastChapter: chapterKey,
+                lastVerse: versesRange || undefined
+            });
+        }
+    }, [bookKey, chapterKey, versesRange, isSearching]);
+
     const currentBookEntry = useMemo(() => {
         return booksIndex.find((b) => b.code === bookKey) || booksIndex[0];
     }, [bookKey]);

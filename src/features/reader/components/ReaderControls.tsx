@@ -5,6 +5,7 @@ import { Settings, Type, AlignJustify, MoveHorizontal, Palette, RotateCcw, X, Su
 import ReaderRuler from './ReaderRuler';
 import { useTTS } from '../hooks/useTTS';
 import { parseBibleQuery, getBookSuggestions } from '../../../utils/bibleParser';
+import { lastBiblePosition, lastCommentaryPosition } from '../../../stores/navigation';
 
 interface Book {
     code: string;
@@ -127,6 +128,10 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
             if (results.length === 1 && !results[0].verses) {
                 // Navegación normal para un solo capítulo sin versículos específicos
                 const url = `/?book=${results[0].book}&chapter=${results[0].chapter}`;
+
+                // Actualizar persistencia
+                lastBiblePosition.set({ lastBook: results[0].book, lastChapter: results[0].chapter.toString() });
+
                 window.history.pushState({}, '', url);
                 window.dispatchEvent(new CustomEvent('app:navigate', {
                     detail: { book: results[0].book, chapter: results[0].chapter.toString() }
@@ -170,6 +175,13 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
             const isCommentary = window.location.pathname.includes('/commentary');
             const baseUrl = isCommentary ? '/commentary' : '/';
             const url = `${baseUrl}?book=${selectedBook.code}&chapter=${chapter}`;
+
+            // Actualizar persistencia
+            if (isCommentary) {
+                lastCommentaryPosition.set({ lastBook: selectedBook.code, lastChapter: chapter.toString() });
+            } else {
+                lastBiblePosition.set({ lastBook: selectedBook.code, lastChapter: chapter.toString() });
+            }
 
             // Si ya estamos en la misma página (Biblia o Comentario), navegar sin recargar
             const currentPath = window.location.pathname;

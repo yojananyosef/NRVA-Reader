@@ -1,6 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
+import { useStore } from "@nanostores/preact";
 import { BookOpen, Menu, ChevronRight, Bookmark, Star, ChevronLeft, Library, X, Languages, BookText, Info } from "lucide-preact";
 import InfoModal from "./InfoModal";
+import { lastBiblePosition, lastCommentaryPosition, lastInterlinearPosition } from "../../../stores/navigation";
 
 type Book = { code: string; name: string; chapters: number; section: string };
 
@@ -14,6 +16,10 @@ export default function SidebarNav({ showTrigger = false, mode = "inline" }: Pro
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => getInitialCollapsed());
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+
+  const $lastBible = useStore(lastBiblePosition);
+  const $lastCommentary = useStore(lastCommentaryPosition);
+  const $lastInterlinear = useStore(lastInterlinearPosition);
 
   const [dictionaryExpanded, setDictionaryExpanded] = useState(false);
 
@@ -37,9 +43,24 @@ export default function SidebarNav({ showTrigger = false, mode = "inline" }: Pro
   });
 
   const mainNav = [
-    { id: "bible", label: "Biblia", icon: BookOpen, url: "/" },
-    { id: "commentary", label: "Comentario", icon: Library, url: "/commentary" },
-    { id: "interlinear", label: "Interlineal", icon: Languages, url: "/interlinear" },
+    {
+      id: "bible",
+      label: "Biblia",
+      icon: BookOpen,
+      url: $lastBible.lastBook ? `/?book=${$lastBible.lastBook}&chapter=${$lastBible.lastChapter}` : "/"
+    },
+    {
+      id: "commentary",
+      label: "Comentario",
+      icon: Library,
+      url: $lastCommentary.lastBook ? `/commentary?book=${$lastCommentary.lastBook}&chapter=${$lastCommentary.lastChapter}` : "/commentary"
+    },
+    {
+      id: "interlinear",
+      label: "Interlineal",
+      icon: Languages,
+      url: $lastInterlinear.lastBook ? `/interlinear?book=${$lastInterlinear.lastBook}&chapter=${$lastInterlinear.lastChapter}&verse=${$lastInterlinear.lastVerse || '1'}` : "/interlinear"
+    },
     {
       id: "dictionary",
       label: "Diccionario",
@@ -96,7 +117,15 @@ export default function SidebarNav({ showTrigger = false, mode = "inline" }: Pro
   const goTo = (url: string) => {
     if (url === "#") return;
     setOpen(false); // Cerrar el overlay si está abierto
-    window.location.href = url;
+
+    // Si es una navegación interna (misma base), usar pushState para persistencia
+    const isInternal = url.startsWith('/') && !url.includes('?');
+    if (isInternal) {
+      // Para rutas como /tracker, /plans etc
+      window.location.href = url;
+    } else {
+      window.location.href = url;
+    }
   };
 
   return (
@@ -225,7 +254,7 @@ export default function SidebarNav({ showTrigger = false, mode = "inline" }: Pro
                 style={{ background: 'none', font: 'inherit' }}
               >
                 <Info className="w-4 h-4" />
-                <span className="text-sm">Información y Contacto</span>
+                <span className="text-sm">Información</span>
               </button>
             </div>
           </aside>

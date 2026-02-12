@@ -85,17 +85,16 @@ export default function InterlinearView() {
     if (typeof window === "undefined") return { book: "gen", chapter: "1", verse: "1" };
     const searchParams = new URLSearchParams(window.location.search);
 
-    // Si no hay parámetros en la URL, intentar cargar de localStorage
+    // Si no hay parámetros en la URL, intentar cargar de lastInterlinearPosition
     if (!searchParams.get("book")) {
-      try {
-        const stored = localStorage.getItem('interlinear-last-position');
-        if (stored) {
-          const { lastBook, lastChapter, lastVerse } = JSON.parse(stored);
-          if (lastBook && lastChapter) {
-            return { book: lastBook, chapter: lastChapter, verse: lastVerse || "1" };
-          }
-        }
-      } catch (e) { }
+      const stored = lastInterlinearPosition.get();
+      if (stored.lastBook && stored.lastChapter) {
+        return {
+          book: stored.lastBook,
+          chapter: stored.lastChapter,
+          verse: stored.lastVerse || "1"
+        };
+      }
     }
 
     return {
