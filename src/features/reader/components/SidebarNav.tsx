@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useState } from "preact/hooks";
-import { BookOpen, Menu, ChevronRight, Bookmark, Star, MessageSquare, ChevronLeft, Library, X, Languages, BookText } from "lucide-preact";
+import { useEffect, useState } from "preact/hooks";
+import { BookOpen, Menu, ChevronRight, Bookmark, Star, ChevronLeft, Library, X, Languages, BookText, Info } from "lucide-preact";
+import InfoModal from "./InfoModal";
 
 type Book = { code: string; name: string; chapters: number; section: string };
 
@@ -9,9 +10,10 @@ type Props = {
   mode?: "overlay" | "inline";
 };
 
-export default function SidebarNav({ books = [], showTrigger = false, mode = "inline" }: Props) {
+export default function SidebarNav({ showTrigger = false, mode = "inline" }: Props) {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => getInitialCollapsed());
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   const [dictionaryExpanded, setDictionaryExpanded] = useState(false);
 
@@ -20,7 +22,7 @@ export default function SidebarNav({ books = [], showTrigger = false, mode = "in
     if (typeof window === "undefined") return "bible";
     const path = window.location.pathname;
     const search = typeof window !== "undefined" ? window.location.search : "";
-    
+
     if (path.includes("/tracker")) return "tracking";
     if (path.includes("/plans")) return "plans";
     if (path.includes("/commentary")) return "commentary";
@@ -38,10 +40,10 @@ export default function SidebarNav({ books = [], showTrigger = false, mode = "in
     { id: "bible", label: "Biblia", icon: BookOpen, url: "/" },
     { id: "commentary", label: "Comentario", icon: Library, url: "/commentary" },
     { id: "interlinear", label: "Interlineal", icon: Languages, url: "/interlinear" },
-    { 
-      id: "dictionary", 
-      label: "Diccionario", 
-      icon: BookText, 
+    {
+      id: "dictionary",
+      label: "Diccionario",
+      icon: BookText,
       url: "#",
       hasSubmenu: true,
       subItems: [
@@ -90,7 +92,7 @@ export default function SidebarNav({ books = [], showTrigger = false, mode = "in
 
   // ELIMINADO: Ya no necesitamos useLayoutEffect para calcular offsets manuales con JS
   // ya que lo maneja el CSS Grid en ReaderLayout.astro
-  
+
   const goTo = (url: string) => {
     if (url === "#") return;
     setOpen(false); // Cerrar el overlay si está abierto
@@ -147,7 +149,6 @@ export default function SidebarNav({ books = [], showTrigger = false, mode = "in
             <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
               {mainNav.map((item) => {
                 const isActive = activeItem === item.id || (item.subItems?.some(sub => sub.id === activeItem));
-                const isExpanded = item.id === "dictionary" && dictionaryExpanded;
 
                 return (
                   <div key={item.id} className="space-y-1">
@@ -218,16 +219,14 @@ export default function SidebarNav({ books = [], showTrigger = false, mode = "in
               })}
             </nav>
             <div className="p-4 border-t" style={{ borderColor: "color-mix(in srgb, var(--color-text), transparent 85%)" }}>
-              <a
-                href="https://wa.me/56930599095"
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => setIsInfoModalOpen(true)}
                 className="w-full text-left p-3 rounded-lg border surface-card flex items-center gap-3 cursor-pointer hover:bg-[var(--surface-hover-bg)] transition-all text-[var(--color-link)]"
-                style={{ textDecoration: 'none' }}
+                style={{ background: 'none', font: 'inherit' }}
               >
-                <MessageSquare className="w-4 h-4" />
-                <span className="text-sm">Contáctanos</span>
-              </a>
+                <Info className="w-4 h-4" />
+                <span className="text-sm">Información y Contacto</span>
+              </button>
             </div>
           </aside>
         </div>
@@ -258,8 +257,8 @@ export default function SidebarNav({ books = [], showTrigger = false, mode = "in
         <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setOpen(false)} style={{ top: "var(--nav-height, 4rem)" }} />
         <aside
           className={`absolute left-0 bottom-0 w-full max-w-[280px] shadow-2xl transform transition-transform duration-300 flex flex-col ${open ? "translate-x-0" : "-translate-x-full"}`}
-          style={{ 
-            backgroundColor: "var(--color-bg)", 
+          style={{
+            backgroundColor: "var(--color-bg)",
             color: "var(--color-text)",
             top: "var(--nav-height, 4rem)"
           }}
@@ -347,19 +346,21 @@ export default function SidebarNav({ books = [], showTrigger = false, mode = "in
             })}
           </nav>
           <div className="p-4 border-t" style={{ borderColor: "color-mix(in srgb, var(--color-text), transparent 85%)" }}>
-            <a
-              href="https://wa.me/56930599095"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => {
+                setOpen(false);
+                setIsInfoModalOpen(true);
+              }}
               className="w-full text-left p-3 rounded-lg border surface-card flex items-center gap-3 cursor-pointer hover:bg-[var(--surface-hover-bg)] transition-all text-[var(--color-link)]"
-              style={{ textDecoration: 'none' }}
+              style={{ background: 'none', font: 'inherit' }}
             >
-              <MessageSquare className="w-4 h-4" />
-              <span className="text-sm">Contáctanos</span>
-            </a>
+              <Info className="w-4 h-4" />
+              <span className="text-sm">Información y Contacto</span>
+            </button>
           </div>
         </aside>
       </div>
+      <InfoModal isOpen={isInfoModalOpen} onClose={() => setIsInfoModalOpen(false)} />
     </>
   );
 }
