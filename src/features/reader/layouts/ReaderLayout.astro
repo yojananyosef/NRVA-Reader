@@ -1,5 +1,5 @@
 ---
-import { ViewTransitions } from "astro:transitions";
+import { ClientRouter } from "astro:transitions";
 import "../../../styles/dyslexia-theme.css";
 import ReaderControls from "../components/ReaderControls";
 import SidebarNav from "../components/SidebarNav";
@@ -37,7 +37,12 @@ const books = booksIndex;
             property="og:description"
             content="Estudio profundo de las Escrituras con idiomas originales y el Comentario Bíblico Adventista."
         />
-        <meta property="og:image" content="/pwa-icon.svg" />
+        <meta
+            property="og:image"
+            content="https://lectura-accesible.vercel.app/pwa-icon.svg"
+        />
+        <meta property="og:image:width" content="512" />
+        <meta property="og:image:height" content="512" />
 
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image" />
@@ -49,9 +54,12 @@ const books = booksIndex;
             property="twitter:description"
             content="Estudio profundo de las Escrituras con idiomas originales y el Comentario Bíblico Adventista."
         />
-        <meta property="twitter:image" content="/pwa-icon.svg" />
+        <meta
+            property="twitter:image"
+            content="https://lectura-accesible.vercel.app/pwa-icon.svg"
+        />
 
-        <ViewTransitions />
+        <ClientRouter />
         <style is:inline>
             :root {
                 --sidebar-width: 16rem;
