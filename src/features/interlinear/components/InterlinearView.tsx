@@ -6,6 +6,7 @@ import { lastInterlinearPosition } from "../../../stores/navigation";
 import { useStore } from "@nanostores/preact";
 import { preferences } from "../../../stores/preferences";
 import { fetchWithCache } from "../../../utils/fetchWithCache";
+import { fetchBibleBook } from "../../../utils/bibleService";
 import ArrowNavigation from "../../../components/common/ArrowNavigation";
 import { formatRedLetters } from "../../../utils/redLetterUtils";
 
@@ -139,7 +140,7 @@ export default function InterlinearView() {
     async function loadSpanishBook() {
       if (!params.book) return;
       try {
-        const data = await fetchWithCache<any>(`/data/books/${params.book}.json`);
+        const data = await fetchBibleBook(params.book);
         if (isMounted) {
           setBookData(data);
         }

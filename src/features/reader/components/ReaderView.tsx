@@ -5,6 +5,7 @@ import { highlights, toggleHighlight } from "../../../stores/highlights";
 import { lastBiblePosition } from "../../../stores/navigation";
 import { useStore } from '@nanostores/preact';
 import { fetchWithCache } from '../../../utils/fetchWithCache';
+import { fetchBibleBook } from '../../../utils/bibleService';
 import ArrowNavigation from '../../../components/common/ArrowNavigation';
 import { getNextChapter, getPrevChapter } from '../../../utils/navigation';
 import { parseBibleQuery, type BiblePassage } from '../../../utils/bibleParser';
@@ -142,7 +143,7 @@ export default function ReaderView() {
 
             try {
                 const uniqueBooks = Array.from(new Set(searchResults.map(r => r.book)));
-                const bookRequests = uniqueBooks.map(code => fetchWithCache<any>(`/data/books/${code}.json`));
+                const bookRequests = uniqueBooks.map(code => fetchBibleBook(code));
                 const booksResults = await Promise.all(bookRequests);
 
                 const bookMap = uniqueBooks.reduce((acc, code, i) => {
@@ -177,7 +178,7 @@ export default function ReaderView() {
 
                 // Usar rutas relativas a la raíz para mayor compatibilidad
                 const [bookData, commentaryData] = await Promise.all([
-                    fetchWithCache<any>(`/data/books/${bookCode}.json`),
+                    fetchBibleBook(bookCode),
                     fetchWithCache<any>(`/data/commentary/${bookCode}.json`).catch(() => null)
                 ]);
 
