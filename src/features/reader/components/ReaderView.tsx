@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'preact/hooks';
 import { BookOpen, Library, Info, EyeOff, Eye, ChevronDown, ChevronUp } from "lucide-preact";
 import booksIndex from "../../../data/books-index.json";
 import { highlights, toggleHighlight } from "../../../stores/highlights";
-import { lastBiblePosition } from "../../../stores/navigation";
 import { useStore } from '@nanostores/preact';
 import { fetchWithCache } from '../../../utils/fetchWithCache';
 import { fetchBibleBook } from '../../../utils/bibleService';
@@ -12,23 +11,46 @@ import { parseBibleQuery, type BiblePassage } from '../../../utils/bibleParser';
 import { formatRedLetters } from '../../../utils/redLetterUtils';
 import { preferences } from '../../../stores/preferences';
 
+// Hooks de aplicación (Application Layer)
+import { useReaderParams } from '../../../application/reader/hooks/useReaderParams';
+import { useBibleData } from '../../../application/reader/hooks/useBibleData';
 
 export default function ReaderView() {
-    const [bookData, setBookData] = useState<any>(null);
-    const [commentaryData, setCommentaryData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    // 1. Gestión de Estado de Aplicación (Hooks)
+    const { params, isSearching, setParams } = useReaderParams();
+    const { bookData, commentaryData, loading: bibleLoading, error: bibleError } = useBibleData(params.book, isSearching);
+
+    // 2. Estado local de UI (Presentation Layer)
     const [viewMode, setViewMode] = useState<'full' | 'partial'>('full');
+    const [activeNote, setActiveNote] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true); // UI Loading (incluye search)
+
+    // Stores globales
     const $highlights = useStore(highlights);
     const $preferences = useStore(preferences);
 
-    // Get params from URL
-    const [activeNote, setActiveNote] = useState<string | null>(null);
-    const [params, setParams] = useState({ book: 'gen', chapter: '1', verses: '', search: '' });
+    // Estado específico de búsqueda (podría moverse a useSearchData en el futuro)
     const [searchResults, setSearchResults] = useState<BiblePassage[]>([]);
     const [multiPassageData, setMultiPassageData] = useState<Record<string, any>>({});
     const [allTitles, setAllTitles] = useState<any[]>([]);
     const [collapsedPassages, setCollapsedPassages] = useState<Record<string, boolean>>({});
-    const [isSearching, setIsSearching] = useState(false);
+
+    // Sincronizar carga de Biblia con carga de UI
+    useEffect(() => {
+        if (!isSearching) {
+            setLoading(bibleLoading);
+        }
+    }, [bibleLoading, isSearching]);
+
+    // Parsear búsqueda cuando cambia params.search
+    useEffect(() => {
+        if (params.search) {
+            const parsed = parseBibleQuery(params.search);
+            setSearchResults(parsed);
+        } else {
+            setSearchResults([]);
+        }
+    }, [params.search]);
 
     // Load titles on mount
     useEffect(() => {
@@ -58,76 +80,7 @@ export default function ReaderView() {
         return () => window.removeEventListener('hashchange', handleHashChange);
     }, []);
 
-    useEffect(() => {
-        const updateParams = () => {
-            const searchParams = new URLSearchParams(window.location.search);
-            const search = searchParams.get('search') || '';
-
-            let book = searchParams.get('book');
-            let chapter = searchParams.get('chapter');
-            let verses = searchParams.get('verses') || '';
-
-            // Si no hay parámetros en la URL, intentar cargar del estado persistente
-            if (!book && !search) {
-                const stored = lastBiblePosition.get();
-                if (stored.lastBook) {
-                    book = stored.lastBook;
-                    chapter = stored.lastChapter;
-                    verses = stored.lastVerse || '';
-                }
-            }
-
-            setParams({
-                book: book || 'gen',
-                chapter: chapter || '1',
-                verses: verses || '',
-                search
-            });
-
-            if (search) {
-                const parsed = parseBibleQuery(search);
-                setSearchResults(parsed);
-                setIsSearching(true);
-            } else {
-                setIsSearching(false);
-                setSearchResults([]);
-            }
-        };
-
-        const handleAppNavigate = (e: any) => {
-            if (e.detail.search) {
-                setParams(p => ({ ...p, search: e.detail.search }));
-                const parsed = parseBibleQuery(e.detail.search);
-                setSearchResults(parsed);
-                setIsSearching(true);
-            } else {
-                const { book, chapter, verses } = e.detail;
-                setParams({ book, chapter: chapter || '1', verses: verses || '', search: '' });
-                setIsSearching(false);
-            }
-        };
-
-        updateParams();
-        window.addEventListener('popstate', updateParams);
-        window.addEventListener('app:navigate' as any, handleAppNavigate);
-        return () => {
-            window.removeEventListener('popstate', updateParams);
-            window.removeEventListener('app:navigate' as any, handleAppNavigate);
-        };
-    }, []);
-
     const { book: bookKey, chapter: chapterKey, verses: versesRange } = params;
-
-    // Sincronizar estado persistente con la posición actual
-    useEffect(() => {
-        if (!isSearching && bookKey && chapterKey) {
-            lastBiblePosition.set({
-                lastBook: bookKey,
-                lastChapter: chapterKey,
-                lastVerse: versesRange || undefined
-            });
-        }
-    }, [bookKey, chapterKey, versesRange, isSearching]);
 
     const currentBookEntry = useMemo(() => {
         return booksIndex.find((b) => b.code === bookKey) || booksIndex[0];
@@ -163,45 +116,6 @@ export default function ReaderView() {
         return () => { isMounted = false; };
     }, [isSearching, searchResults]);
 
-    // Load book data only when bookKey changes (normal mode)
-    useEffect(() => {
-        if (isSearching) return;
-        let isMounted = true;
-        async function loadBookData() {
-            // Only show loading if we don't have the data for this book yet
-            if (!bookData || bookData.id !== currentBookEntry.code) {
-                setLoading(true);
-            }
-
-            try {
-                const bookCode = currentBookEntry.code;
-
-                // Usar rutas relativas a la raíz para mayor compatibilidad
-                const [bookData, commentaryData] = await Promise.all([
-                    fetchBibleBook(bookCode),
-                    fetchWithCache<any>(`/data/commentary/${bookCode}.json`).catch(() => null)
-                ]);
-
-                if (!isMounted) return;
-
-                setBookData(bookData);
-                setCommentaryData(commentaryData);
-            } catch (e) {
-                console.error("Error loading data:", e);
-            } finally {
-                if (isMounted) setLoading(false);
-            }
-        }
-        loadBookData();
-        return () => { isMounted = false; };
-    }, [currentBookEntry.code]);
-
-    // Update last position when book or chapter changes
-    useEffect(() => {
-        lastBiblePosition.set({ lastBook: bookKey, lastChapter: chapterKey });
-        // Reset active note when changing chapter or book
-        setActiveNote(null);
-    }, [bookKey, chapterKey]);
 
     const safeParseInt = (s: string) => {
         const n = parseInt(s, 10);
@@ -338,11 +252,28 @@ export default function ReaderView() {
         );
     }
 
-    if (!bookData) {
+    if (bibleError) {
         return (
             <div class="flex flex-col items-center justify-center min-h-[50vh] text-center p-4">
                 <Info class="w-12 h-12 text-red-500 mb-4 opacity-50" />
                 <h2 class="text-xl font-bold mb-2">Error al cargar el contenido</h2>
+                <p class="opacity-70 mb-6">No pudimos cargar {currentBookEntry.name}.</p>
+                <p class="text-sm opacity-50 mb-6">{bibleError.message}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    class="px-4 py-2 bg-[var(--color-link)] text-white rounded-lg hover:opacity-90 transition-opacity"
+                >
+                    Reintentar
+                </button>
+            </div>
+        );
+    }
+
+    if (!isSearching && !bookData) {
+        return (
+            <div class="flex flex-col items-center justify-center min-h-[50vh] text-center p-4">
+                <Info class="w-12 h-12 text-red-500 mb-4 opacity-50" />
+                <h2 class="text-xl font-bold mb-2">Libro no encontrado</h2>
                 <p class="opacity-70 mb-6">No pudimos encontrar los datos para {currentBookEntry.name}.</p>
                 <button
                     onClick={() => window.location.reload()}
