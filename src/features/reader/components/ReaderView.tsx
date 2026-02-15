@@ -3,7 +3,6 @@ import { BookOpen, Library, Info, EyeOff, Eye, ChevronDown, ChevronUp } from "lu
 import booksIndex from "../../../data/books-index.json";
 import { highlights, toggleHighlight } from "../../../stores/highlights";
 import { useStore } from '@nanostores/preact';
-import { fetchWithCache } from '../../../utils/fetchWithCache';
 import { fetchBibleBook } from '../../../utils/bibleService';
 import ArrowNavigation from '../../../components/common/ArrowNavigation';
 import { getNextChapter, getPrevChapter } from '../../../utils/navigation';
@@ -14,11 +13,13 @@ import { preferences } from '../../../stores/preferences';
 // Hooks de aplicación (Application Layer)
 import { useReaderParams } from '../../../application/reader/hooks/useReaderParams';
 import { useBibleData } from '../../../application/reader/hooks/useBibleData';
+import { useBibleMetadata } from '../../../application/reader/hooks/useBibleMetadata';
 
 export default function ReaderView() {
     // 1. Gestión de Estado de Aplicación (Hooks)
     const { params, isSearching, setParams } = useReaderParams();
     const { bookData, commentaryData, loading: bibleLoading, error: bibleError } = useBibleData(params.book, isSearching);
+    const { getChapterTitles } = useBibleMetadata(); // Hook de metadatos
 
     // 2. Estado local de UI (Presentation Layer)
     const [viewMode, setViewMode] = useState<'full' | 'partial'>('full');
@@ -32,7 +33,6 @@ export default function ReaderView() {
     // Estado específico de búsqueda (podría moverse a useSearchData en el futuro)
     const [searchResults, setSearchResults] = useState<BiblePassage[]>([]);
     const [multiPassageData, setMultiPassageData] = useState<Record<string, any>>({});
-    const [allTitles, setAllTitles] = useState<any[]>([]);
     const [collapsedPassages, setCollapsedPassages] = useState<Record<string, boolean>>({});
 
     // Sincronizar carga de Biblia con carga de UI
@@ -52,18 +52,7 @@ export default function ReaderView() {
         }
     }, [params.search]);
 
-    // Load titles on mount
-    useEffect(() => {
-        fetchWithCache<any>('/data/titles/headers.json')
-            .then(data => {
-                if (data && data.data) {
-                    // Flatten the nested array structure if necessary
-                    const flattened = Array.isArray(data.data[0]) ? data.data[0] : data.data;
-                    setAllTitles(flattened);
-                }
-            })
-            .catch(err => console.error("Error loading titles:", err));
-    }, []);
+
 
     useEffect(() => {
         const handleHashChange = () => {
@@ -198,20 +187,7 @@ export default function ReaderView() {
 
     const { versesList, footnotes } = processedData;
 
-    // Helper to get titles for a specific book/chapter
-    const getChapterTitles = (bookCode: string, chapter: string | number) => {
-        if (!allTitles.length) return [];
-        const bookEntry = booksIndex.find(b => b.code === bookCode);
-        if (!bookEntry) return [];
 
-        const bookTitles = allTitles.find(t =>
-            t?.display?.toLowerCase() === bookEntry.name.toLowerCase()
-        );
-        if (!bookTitles) return [];
-
-        const chapterTitles = bookTitles.chapters?.find((c: any) => c.chapter === parseInt(chapter.toString()));
-        return chapterTitles?.content || [];
-    };
 
     const highlightedCount = versesList.filter((v) => v.isHighlighted).length;
 
@@ -246,22 +222,24 @@ export default function ReaderView() {
 
     if (loading) {
         return (
-            <div class="flex items-center justify-center min-h-[50vh]">
+            <div class="flex items-center justify-center min-h-[50vh]" role="status" aria-label="Cargando contenido">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-link)]"></div>
+                <span class="sr-only">Cargando...</span>
             </div>
         );
     }
 
     if (bibleError) {
         return (
-            <div class="flex flex-col items-center justify-center min-h-[50vh] text-center p-4">
-                <Info class="w-12 h-12 text-red-500 mb-4 opacity-50" />
+            <div class="flex flex-col items-center justify-center min-h-[50vh] text-center p-4" role="alert">
+                <Info class="w-12 h-12 text-red-500 mb-4 opacity-50" aria-hidden="true" />
                 <h2 class="text-xl font-bold mb-2">Error al cargar el contenido</h2>
                 <p class="opacity-70 mb-6">No pudimos cargar {currentBookEntry.name}.</p>
                 <p class="text-sm opacity-50 mb-6">{bibleError.message}</p>
                 <button
                     onClick={() => window.location.reload()}
                     class="px-4 py-2 bg-[var(--color-link)] text-white rounded-lg hover:opacity-90 transition-opacity"
+                    aria-label="Reintentar cargar el contenido"
                 >
                     Reintentar
                 </button>
@@ -271,13 +249,14 @@ export default function ReaderView() {
 
     if (!isSearching && !bookData) {
         return (
-            <div class="flex flex-col items-center justify-center min-h-[50vh] text-center p-4">
-                <Info class="w-12 h-12 text-red-500 mb-4 opacity-50" />
+            <div class="flex flex-col items-center justify-center min-h-[50vh] text-center p-4" role="alert">
+                <Info class="w-12 h-12 text-red-500 mb-4 opacity-50" aria-hidden="true" />
                 <h2 class="text-xl font-bold mb-2">Libro no encontrado</h2>
                 <p class="opacity-70 mb-6">No pudimos encontrar los datos para {currentBookEntry.name}.</p>
                 <button
                     onClick={() => window.location.reload()}
                     class="px-4 py-2 bg-[var(--color-link)] text-white rounded-lg hover:opacity-90 transition-opacity"
+                    aria-label="Reintentar cargar el contenido"
                 >
                     Reintentar
                 </button>
@@ -355,9 +334,10 @@ export default function ReaderView() {
                                                             `}
                                                             style={{ color: 'var(--color-text)' }}
                                                         >
-                                                            <span class="verse-num inline-block font-bold mr-2 select-none align-baseline opacity-40">
+                                                            <span class="verse-num inline-block font-bold mr-2 select-none align-baseline opacity-40" aria-hidden="true">
                                                                 {num}
                                                             </span>
+                                                            <span class="sr-only">Versículo {num} </span>
                                                             <span dangerouslySetInnerHTML={{
                                                                 __html: $preferences.showRedLetters
                                                                     ? formatRedLetters(verseText, result.book, result.chapter, verseNum)
@@ -488,9 +468,10 @@ export default function ReaderView() {
                                     `}
                                     style={{ color: 'var(--color-text)' }}
                                 >
-                                    <span class={`verse-num inline-block font-bold mr-2 select-none align-baseline ${verse.isHighlighted ? "text-[var(--color-link)] opacity-100" : "opacity-40"}`}>
+                                    <span class={`verse-num inline-block font-bold mr-2 select-none align-baseline ${verse.isHighlighted ? "text-[var(--color-link)] opacity-100" : "opacity-40"}`} aria-hidden="true">
                                         {verse.number}
                                     </span>
+                                    <span class="sr-only">Versículo {verse.number} </span>
                                     <span
                                         class={verse.isHighlighted ? "font-medium" : ""}
                                         dangerouslySetInnerHTML={{
