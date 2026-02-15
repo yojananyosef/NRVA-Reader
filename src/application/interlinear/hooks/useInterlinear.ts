@@ -4,6 +4,7 @@ import { fetchWithCache } from '../../../utils/fetchWithCache';
 import { fetchBibleBook } from '../../../utils/bibleService';
 import { formatRedLetters } from '../../../utils/redLetterUtils';
 import type { InterlinearData } from '../../../features/interlinear/types';
+import booksIndex from '../../../data/books-index.json';
 
 export interface InterlinearParams {
     book: string;
@@ -122,9 +123,12 @@ export function useInterlinearData(bookCode: string, chapter: string, verse: str
                 const mappedBook = bookMapping[bookCode];
                 if (!mappedBook) throw new Error(`Book mapping not found for ${bookCode}`);
 
+                const bookInfo = booksIndex.find(b => b.code === bookCode);
+                const section = bookInfo?.section === 'at' ? 'hebrew' : 'greek';
+
                 // Carga paralela de datos interlineales y texto bíblico
                 const [interlinearRes, bibleRes] = await Promise.all([
-                    fetchWithCache<InterlinearData>(`/data/interlinear/${mappedBook}/${chapter}/${verse}.json`),
+                    fetchWithCache<InterlinearData>(`/data/bible/${section}/${mappedBook}.json`),
                     fetchBibleBook(bookCode)
                 ]);
 
@@ -151,16 +155,17 @@ export function useInterlinearData(bookCode: string, chapter: string, verse: str
 
     // Calcular el versículo de la Biblia en español
     const currentBibleVerse = useMemo(() => {
-        if (!bibleText) return null;
-        const chapterData = bibleText.chapters.find((c: any) => c.chapter === parseInt(chapter));
+        if (!bibleText || !bibleText.capitulo) return null;
+
+        const chapterData = bibleText.capitulo[chapter];
         if (!chapterData) return null;
 
-        const verseData = chapterData.verses.find((v: any) => v.verse === parseInt(verse));
+        const verseData = chapterData[verse];
         if (!verseData) return null;
 
         return {
             ...verseData,
-            text: formatRedLetters(verseData.text, bookCode, parseInt(chapter), parseInt(verse))
+            text: formatRedLetters(verseData.texto, bookCode, parseInt(chapter), parseInt(verse))
         };
     }, [bibleText, chapter, verse, bookCode]);
 

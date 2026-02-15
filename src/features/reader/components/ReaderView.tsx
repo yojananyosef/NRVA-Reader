@@ -13,6 +13,7 @@ import { useReaderParams } from '../../../application/reader/hooks/useReaderPara
 import { useBibleData } from '../../../application/reader/hooks/useBibleData';
 import { useBibleMetadata } from '../../../application/reader/hooks/useBibleMetadata';
 import { useBibleSearch } from '../../../application/search/hooks/useBibleSearch';
+import { sanitizeHTML } from '../../../utils/security';
 
 export default function ReaderView() {
     // 1. Gestión de Estado de Aplicación (Hooks)
@@ -433,6 +434,15 @@ export default function ReaderView() {
                                 <p
                                     id={`v-${verse.number}`}
                                     onClick={() => toggleHighlight(verseId)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            toggleHighlight(verseId);
+                                        }
+                                    }}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-pressed={!!isGlobalHighlighted}
                                     class={`relative p-2 -mx-2 rounded transition-all cursor-pointer verse-item group
                                         ${verse.isHighlighted ? "is-plan-highlighted" : ""} 
                                         ${isGlobalHighlighted ? 'is-user-highlighted' : ''} 
@@ -447,9 +457,9 @@ export default function ReaderView() {
                                     <span
                                         class={verse.isHighlighted ? "font-medium" : ""}
                                         dangerouslySetInnerHTML={{
-                                            __html: $preferences.showRedLetters
+                                            __html: sanitizeHTML($preferences.showRedLetters
                                                 ? formatRedLetters(verse.text, bookKey, currentChapNum, verseNum)
-                                                : verse.text
+                                                : verse.text)
                                         }}
                                     />
                                     {currentChapterCommentaryVerses.some((c: any) => c.verse === parseInt(verse.number)) && (
