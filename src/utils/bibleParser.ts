@@ -1,10 +1,7 @@
 import booksIndex from "../data/books-index.json";
+import type { BiblePassage } from "../domain/search/SearchEntities";
 
-export interface BiblePassage {
-    book: string;
-    chapter: number;
-    verses?: number[];
-}
+export type { BiblePassage };
 
 /**
  * Busca coincidencias de libros para sugerencias en tiempo real.

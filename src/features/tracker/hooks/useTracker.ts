@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'preact/hooks';
+import { useCallback } from 'preact/hooks';
+import { useStore } from '@nanostores/preact';
+import { tracker, toggleChapterCompletion, resetTrackerProgress } from '../../../stores/tracker';
 import booksData from '../../../data/books-index.json';
 
 export type Book = {
@@ -8,54 +10,21 @@ export type Book = {
   section: string;
 };
 
-type CompletedChapters = {
-  [bookCode: string]: number[];
-};
-
-const STORAGE_KEY = 'bible-tracker-progress';
-
+/**
+ * useTracker (Application Hook)
+ * 
+ * Responsabilidad Única: Proporcionar acceso y lógica derivada del progreso de lectura.
+ * Utiliza el store global 'tracker' para la persistencia.
+ */
 export function useTracker() {
-  const [completedChapters, setCompletedChapters] = useState<CompletedChapters>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const completedChapters = useStore(tracker);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setCompletedChapters(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error('Error loading tracker progress:', e);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Save to localStorage whenever state changes
-  useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(completedChapters));
-    }
-  }, [completedChapters, isLoading]);
+  // Nanostores carga síncronamente del localStorage, así que no hay "loading" real
+  // a menos que queramos esperar a la hidratación, pero useStore maneja updates.
+  const isLoading = false;
 
   const toggleChapter = useCallback((bookCode: string, chapter: number) => {
-    setCompletedChapters((prev) => {
-      const currentBookChapters = prev[bookCode] || [];
-      const isCompleted = currentBookChapters.includes(chapter);
-
-      let newBookChapters;
-      if (isCompleted) {
-        newBookChapters = currentBookChapters.filter((c) => c !== chapter);
-      } else {
-        newBookChapters = [...currentBookChapters, chapter];
-      }
-
-      return {
-        ...prev,
-        [bookCode]: newBookChapters,
-      };
-    });
+    toggleChapterCompletion(bookCode, chapter);
   }, []);
 
   const isChapterCompleted = useCallback((bookCode: string, chapter: number) => {
@@ -82,7 +51,7 @@ export function useTracker() {
 
   const resetProgress = useCallback(() => {
     if (confirm('¿Estás seguro de que quieres reiniciar todo tu progreso? Esta acción no se puede deshacer.')) {
-      setCompletedChapters({});
+      resetTrackerProgress();
     }
   }, []);
 

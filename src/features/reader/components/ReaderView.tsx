@@ -3,10 +3,8 @@ import { BookOpen, Library, Info, EyeOff, Eye, ChevronDown, ChevronUp } from "lu
 import booksIndex from "../../../data/books-index.json";
 import { highlights, toggleHighlight } from "../../../stores/highlights";
 import { useStore } from '@nanostores/preact';
-import { fetchBibleBook } from '../../../utils/bibleService';
 import ArrowNavigation from '../../../components/common/ArrowNavigation';
 import { getNextChapter, getPrevChapter } from '../../../utils/navigation';
-import { parseBibleQuery, type BiblePassage } from '../../../utils/bibleParser';
 import { formatRedLetters } from '../../../utils/redLetterUtils';
 import { preferences } from '../../../stores/preferences';
 
@@ -14,45 +12,38 @@ import { preferences } from '../../../stores/preferences';
 import { useReaderParams } from '../../../application/reader/hooks/useReaderParams';
 import { useBibleData } from '../../../application/reader/hooks/useBibleData';
 import { useBibleMetadata } from '../../../application/reader/hooks/useBibleMetadata';
+import { useBibleSearch } from '../../../application/search/hooks/useBibleSearch';
 
 export default function ReaderView() {
     // 1. Gestión de Estado de Aplicación (Hooks)
     const { params, isSearching, setParams } = useReaderParams();
     const { bookData, commentaryData, loading: bibleLoading, error: bibleError } = useBibleData(params.book, isSearching);
     const { getChapterTitles } = useBibleMetadata(); // Hook de metadatos
+    const {
+        searchResults,
+        multiPassageData,
+        loading: searchLoading,
+        collapsedPassages,
+        toggleCollapse
+    } = useBibleSearch(params.search || "");
 
     // 2. Estado local de UI (Presentation Layer)
     const [viewMode, setViewMode] = useState<'full' | 'partial'>('full');
     const [activeNote, setActiveNote] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true); // UI Loading (incluye search)
+    const [loading, setLoading] = useState(true); // UI Loading
 
     // Stores globales
     const $highlights = useStore(highlights);
     const $preferences = useStore(preferences);
 
-    // Estado específico de búsqueda (podría moverse a useSearchData en el futuro)
-    const [searchResults, setSearchResults] = useState<BiblePassage[]>([]);
-    const [multiPassageData, setMultiPassageData] = useState<Record<string, any>>({});
-    const [collapsedPassages, setCollapsedPassages] = useState<Record<string, boolean>>({});
-
-    // Sincronizar carga de Biblia con carga de UI
+    // Sincronizar carga con el estado global de carga
     useEffect(() => {
-        if (!isSearching) {
+        if (isSearching) {
+            setLoading(searchLoading);
+        } else {
             setLoading(bibleLoading);
         }
-    }, [bibleLoading, isSearching]);
-
-    // Parsear búsqueda cuando cambia params.search
-    useEffect(() => {
-        if (params.search) {
-            const parsed = parseBibleQuery(params.search);
-            setSearchResults(parsed);
-        } else {
-            setSearchResults([]);
-        }
-    }, [params.search]);
-
-
+    }, [bibleLoading, searchLoading, isSearching]);
 
     useEffect(() => {
         const handleHashChange = () => {
@@ -75,35 +66,7 @@ export default function ReaderView() {
         return booksIndex.find((b) => b.code === bookKey) || booksIndex[0];
     }, [bookKey]);
 
-    // Load multi-passage data when search results change
-    useEffect(() => {
-        if (!isSearching || searchResults.length === 0) return;
 
-        let isMounted = true;
-        async function loadMultiData() {
-            setLoading(true);
-
-            try {
-                const uniqueBooks = Array.from(new Set(searchResults.map(r => r.book)));
-                const bookRequests = uniqueBooks.map(code => fetchBibleBook(code));
-                const booksResults = await Promise.all(bookRequests);
-
-                const bookMap = uniqueBooks.reduce((acc, code, i) => {
-                    acc[code] = booksResults[i];
-                    return acc;
-                }, {} as Record<string, any>);
-
-                setMultiPassageData(bookMap);
-            } catch (e) {
-                console.error("Error loading multi-passage data:", e);
-            } finally {
-                if (isMounted) setLoading(false);
-            }
-        }
-
-        loadMultiData();
-        return () => { isMounted = false; };
-    }, [isSearching, searchResults]);
 
 
     const safeParseInt = (s: string) => {
@@ -288,7 +251,16 @@ export default function ReaderView() {
                             <div key={passageId} class="space-y-4">
                                 <div
                                     class="flex items-center gap-4 mb-2 sticky top-16 bg-[var(--color-bg)]/80 backdrop-blur-sm py-2 z-10 cursor-pointer group"
-                                    onClick={() => setCollapsedPassages(prev => ({ ...prev, [passageId]: !prev[passageId] }))}
+                                    onClick={() => toggleCollapse(passageId)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            toggleCollapse(passageId);
+                                        }
+                                    }}
+                                    role="button"
+                                    aria-expanded={!isCollapsed}
+                                    tabIndex={0}
                                 >
                                     <h2 class="text-xl font-bold text-[var(--color-link)] flex items-center gap-2">
                                         {bookEntry?.name} {result.chapter}
