@@ -1,140 +1,59 @@
-import { useState, useEffect, useMemo } from 'preact/hooks';
+import { useMemo, useEffect } from 'preact/hooks';
 import { Library } from "lucide-preact";
 import booksIndex from "../../../data/books-index.json";
-import { lastCommentaryPosition } from "../../../stores/navigation";
 import CommentarySelector from "./CommentarySelector";
-import { fetchWithCache } from '../../../utils/fetchWithCache';
 import ArrowNavigation from '../../../components/common/ArrowNavigation';
 import { getNextChapter, getPrevChapter } from '../../../utils/navigation';
 
+// Hooks de aplicación
+import { useCommentaryParams, useCommentaryData } from '../../../application/commentary/hooks/useCommentary';
+
 export default function CommentaryView() {
-    const [commentaryData, setCommentaryData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-
-    const [activeCommentary, setActiveCommentary] = useState<string | null>(null);
-    const [params, setParams] = useState({ book: 'gen', chapter: '1' });
-
-    useEffect(() => {
-        const handleHashChange = () => {
-            const hash = window.location.hash;
-            if (hash.startsWith('#com-')) {
-                setActiveCommentary(hash.substring(1));
-            } else {
-                setActiveCommentary(null);
-            }
-        };
-
-        handleHashChange();
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
-    }, []);
-
-    useEffect(() => {
-        const updateParams = () => {
-            const searchParams = new URLSearchParams(window.location.search);
-            let book = searchParams.get('book');
-            let chapter = searchParams.get('chapter');
-
-            // Si no hay parámetros en la URL, intentar cargar del estado persistente
-            if (!book) {
-                const stored = lastCommentaryPosition.get();
-                if (stored.lastBook) {
-                    book = stored.lastBook;
-                    chapter = stored.lastChapter;
-                }
-            }
-
-            setParams({
-                book: book || 'gen',
-                chapter: chapter || '1'
-            });
-        };
-
-        const handleAppNavigate = (e: any) => {
-            const { book, chapter } = e.detail;
-            setParams({ book, chapter: chapter || '1' });
-        };
-
-        updateParams();
-        window.addEventListener('popstate', updateParams);
-        window.addEventListener('app:navigate' as any, handleAppNavigate);
-        return () => {
-            window.removeEventListener('popstate', updateParams);
-            window.removeEventListener('app:navigate' as any, handleAppNavigate);
-        };
-    }, []);
-
+    // 1. Gestión de Parámetros y Navegación
+    const { params, setParams, activeCommentary } = useCommentaryParams();
     const { book: bookKey, chapter: chapterKey } = params;
 
-    // Sincronizar estado persistente con la posición actual
-    useEffect(() => {
-        if (bookKey && chapterKey) {
-            lastCommentaryPosition.set({
-                lastBook: bookKey,
-                lastChapter: chapterKey
-            });
-        }
-    }, [bookKey, chapterKey]);
+    // 2. Gestión de Datos
+    const { commentaryData, loading, error, currentBookEntry } = useCommentaryData(bookKey);
 
-    const currentBookEntry = useMemo(() => {
-        return booksIndex.find((b) => b.code === bookKey) || booksIndex[0];
-    }, [bookKey]);
     const currentChapNumInt = parseInt(chapterKey, 10) || 1;
 
-    // Load commentary data only when bookKey changes
-    useEffect(() => {
-        let isMounted = true;
-        async function loadBookData() {
-            // Only show loading if we don't have the data for this book yet
-            if (!commentaryData || commentaryData.id !== currentBookEntry.code) {
-                setLoading(true);
-            }
+    // Obtener contenido del capítulo actual
+    const currentChapterData = useMemo(() => {
+        if (!commentaryData || !commentaryData.chapters) return null;
+        return commentaryData.chapters.find((c: any) => c.chapter === currentChapNumInt);
+    }, [commentaryData, currentChapNumInt]);
 
-            try {
-                const bookCode = currentBookEntry.code;
-                const data = await fetchWithCache<any>(`/data/commentary/${bookCode}.json`);
+    const currentChapterCommentaryVerses = currentChapterData?.verses || [];
 
-                if (!isMounted) return;
-                setCommentaryData(data);
-            } catch (e) {
-                console.error("Error loading commentary data:", e);
-                if (isMounted) setCommentaryData(null);
-            } finally {
-                if (isMounted) setLoading(false);
-            }
-        }
-        loadBookData();
-        return () => { isMounted = false; };
-    }, [currentBookEntry.code]);
+    // Calcular navegación
+    const prevChapter = getPrevChapter(bookKey, currentChapNumInt);
+    const nextChapter = getNextChapter(bookKey, currentChapNumInt);
 
-    // Update last position when book or chapter changes
-    useEffect(() => {
-        lastCommentaryPosition.set({ lastBook: bookKey, lastChapter: chapterKey });
-    }, [bookKey, chapterKey]);
+    const prevLink = prevChapter ? `?book=${prevChapter.book}&chapter=${prevChapter.chapter}` : undefined;
+    const nextLink = nextChapter ? `?book=${nextChapter.book}&chapter=${nextChapter.chapter}` : undefined;
 
+    const handleNavigate = (url: string) => {
+        const newUrl = new URL(url, window.location.origin);
+        const book = newUrl.searchParams.get('book') || 'gen';
+        const chapter = newUrl.searchParams.get('chapter') || '1';
 
-    const prevLink = useMemo(() => {
-        const target = getPrevChapter(bookKey, currentChapNumInt);
-        return target ? `/commentary?book=${target.book}&chapter=${target.chapter}` : null;
-    }, [bookKey, currentChapNumInt]);
+        // Actualizar URL sin recargar
+        window.history.pushState({}, '', url);
 
-    const nextLink = useMemo(() => {
-        const target = getNextChapter(bookKey, currentChapNumInt);
-        return target ? `/commentary?book=${target.book}&chapter=${target.chapter}` : null;
-    }, [bookKey, currentChapNumInt]);
+        // Actualizar estado
+        setParams({ book, chapter });
 
-    const currentCommentaryChapter = commentaryData?.chapters?.find(
-        (c: any) => c.chapter === currentChapNumInt
-    );
-    const currentChapterCommentaryVerses = currentCommentaryChapter?.verses || [];
+        // Scroll arriba
+        window.scrollTo(0, 0);
+    };
 
+    // Scroll a comentario activo
     useEffect(() => {
         if (!loading && activeCommentary) {
             const scrollWithRetry = (retries = 5) => {
                 const element = document.getElementById(activeCommentary);
                 if (element) {
-                    console.log(`Scrolling to ${activeCommentary}`);
-                    // Intentar scrollIntoView primero
                     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
                     // Si después de un momento no estamos cerca, forzarlo con scrollTo
@@ -157,42 +76,29 @@ export default function CommentaryView() {
 
     if (loading) {
         return (
-            <div class="flex items-center justify-center min-h-[50vh]">
+            <div class="flex items-center justify-center min-h-[50vh]" role="status" aria-label="Cargando comentario">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-link)]"></div>
+                <span class="sr-only">Cargando...</span>
             </div>
         );
     }
 
-    if (!commentaryData && !loading) {
+    if (error || !commentaryData) {
         return (
-            <div class="flex flex-col items-center justify-center min-h-[50vh] text-center p-4">
-                <Library class="w-12 h-12 text-[var(--color-link)] mb-4 opacity-30" />
-                <h2 class="text-xl font-bold mb-2">Sin comentarios</h2>
-                <p class="opacity-70 mb-6">No pudimos cargar los comentarios para {currentBookEntry.name}.</p>
+            <div class="flex flex-col items-center justify-center min-h-[50vh] text-center p-4" role="alert">
+                <Library class="w-12 h-12 text-red-500 mb-4 opacity-50" aria-hidden="true" />
+                <h2 class="text-xl font-bold mb-2">Error al cargar comentario</h2>
+                <p class="opacity-70 mb-6">No pudimos cargar los datos para {currentBookEntry?.name || bookKey}.</p>
                 <button
                     onClick={() => window.location.reload()}
                     class="px-4 py-2 bg-[var(--color-link)] text-white rounded-lg hover:opacity-90 transition-opacity"
+                    aria-label="Reintentar cargar"
                 >
                     Reintentar
                 </button>
             </div>
         );
     }
-
-    const handleNavigate = (url: string) => {
-        const newUrl = new URL(url, window.location.origin);
-        const book = newUrl.searchParams.get('book') || 'gen';
-        const chapter = newUrl.searchParams.get('chapter') || '1';
-
-        // Actualizar URL sin recargar
-        window.history.pushState({}, '', url);
-
-        // Actualizar estado local
-        setParams({ book, chapter });
-
-        // Hacer scroll arriba instantáneo para mejor sensación de inmediatez
-        window.scrollTo(0, 0);
-    };
 
     return (
         <article class="reader-content max-w-3xl mx-auto pb-12 px-2 md:px-0 relative animate-in fade-in duration-700">

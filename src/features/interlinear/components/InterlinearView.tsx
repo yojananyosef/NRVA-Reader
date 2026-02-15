@@ -1,127 +1,90 @@
 import { useState, useEffect, useMemo, useRef } from "preact/hooks";
 import { Info, ChevronDown, Book, Hash, Check } from "lucide-preact";
-import type { InterlinearVerse, InterlinearData } from "../types";
 import booksIndex from "../../../data/books-index.json";
-import { lastInterlinearPosition } from "../../../stores/navigation";
 import { useStore } from "@nanostores/preact";
 import { preferences } from "../../../stores/preferences";
-import { fetchWithCache } from "../../../utils/fetchWithCache";
-import { fetchBibleBook } from "../../../utils/bibleService";
 import ArrowNavigation from "../../../components/common/ArrowNavigation";
-import { formatRedLetters } from "../../../utils/redLetterUtils";
-
-const bookMapping: Record<string, string> = {
-  gen: "genesis",
-  exo: "exodus",
-  lev: "leviticus",
-  num: "numbers",
-  deu: "deuteronomy",
-  jos: "joshua",
-  jdg: "judges",
-  rut: "ruth",
-  "1sa": "1_samuel",
-  "2sa": "2_samuel",
-  "1ki": "1_kings",
-  "2ki": "2_kings",
-  "1ch": "1_chronicles",
-  "2ch": "2_chronicles",
-  ezr: "ezra",
-  neh: "nehemiah",
-  est: "esther",
-  job: "job",
-  psa: "psalms",
-  pro: "proverbs",
-  ecc: "ecclesiastes",
-  sol: "song_of_songs",
-  isa: "isaiah",
-  jer: "jeremiah",
-  lam: "lamentations",
-  eze: "ezekiel",
-  dan: "daniel",
-  hos: "hosea",
-  joe: "joel",
-  amo: "amos",
-  oba: "obadiah",
-  jon: "jonah",
-  mic: "micah",
-  nah: "nahum",
-  hab: "habakkuk",
-  zep: "zephaniah",
-  hag: "haggai",
-  zec: "zechariah",
-  mal: "malachi",
-  // New Testament
-  mat: "matthew",
-  mrk: "mark",
-  luk: "luke",
-  jhn: "john",
-  act: "acts",
-  rom: "romans",
-  "1co": "1-corinthians",
-  "2co": "2-corinthians",
-  gal: "galatians",
-  eph: "ephesians",
-  phi: "philippians",
-  col: "colossians",
-  "1th": "1-thessalonians",
-  "2th": "2-thessalonians",
-  "1ti": "1-timothy",
-  "2ti": "2-timothy",
-  tit: "titus",
-  phm: "philemon",
-  heb: "hebrews",
-  jam: "james",
-  "1pe": "1-peter",
-  "2pe": "2-peter",
-  "1jo": "1-john",
-  "2jo": "2-john",
-  "3jo": "3-john",
-  jud: "jude",
-  rev: "revelation",
-};
+import { useInterlinearParams, useInterlinearData } from "../../../application/interlinear/hooks/useInterlinear";
 
 export default function InterlinearView() {
   const $preferences = useStore(preferences);
-  const [params, setParams] = useState(() => {
-    if (typeof window === "undefined") return { book: "gen", chapter: "1", verse: "1" };
-    const searchParams = new URLSearchParams(window.location.search);
 
-    // Si no hay parámetros en la URL, intentar cargar de lastInterlinearPosition
-    if (!searchParams.get("book")) {
-      const stored = lastInterlinearPosition.get();
-      if (stored.lastBook && stored.lastChapter) {
-        return {
-          book: stored.lastBook,
-          chapter: stored.lastChapter,
-          verse: stored.lastVerse || "1"
-        };
-      }
+  // 1. Gestión de Parámetros (Application Hook)
+  const { params, setParams, updateUrl } = useInterlinearParams();
+  const { book: bookCode, chapter, verse } = params;
+
+  // 2. Gestión de Datos (Application Hook)
+  const { interlinearData, currentBibleVerse, loading, error } = useInterlinearData(bookCode, chapter, verse);
+
+  const chapterData = useMemo(() => {
+    if (!interlinearData) return [];
+    return interlinearData.filter(v => v.chapter === parseInt(chapter));
+  }, [interlinearData, chapter]);
+
+  // Encontrar el versículo específico
+  const verseData = useMemo(() => {
+    if (!interlinearData) return null;
+    // Filtrar solo los versículos del capítulo actual
+    const chapterVerses = interlinearData.filter(v => v.chapter === parseInt(chapter));
+    return chapterVerses.find(v => v.verse === parseInt(verse)) || null;
+  }, [interlinearData, chapter, verse]);
+
+  const hasPrevVerse = parseInt(verse) > 1 || parseInt(chapter) > 1;
+  const hasNextVerse = true;
+
+  const navigateVerse = (direction: number) => {
+    const v = parseInt(verse);
+    const c = parseInt(chapter);
+    if (direction === -1) {
+      if (v > 1) updateUrl({ verse: (v - 1).toString() });
+      else if (c > 1) updateUrl({ chapter: (c - 1).toString(), verse: "1" });
+    } else {
+      updateUrl({ verse: (v + 1).toString() });
     }
+  };
 
-    return {
-      book: searchParams.get("book") || "gen",
-      chapter: searchParams.get("chapter") || "1",
-      verse: searchParams.get("verse") || "1"
-    };
-  });
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [chapterData, setChapterData] = useState<InterlinearVerse[]>([]);
-  const [verseData, setVerseData] = useState<InterlinearVerse | null>(null);
-  const [bookData, setBookData] = useState<any>(null);
-
-  // Estados para los selectores custom
+  // Estado local para UI de selectores (Presentation Logic)
   const [isBookOpen, setIsBookOpen] = useState(false);
   const [isChapterOpen, setIsChapterOpen] = useState(false);
   const [isVerseOpen, setIsVerseOpen] = useState(false);
-
   const bookRef = useRef<HTMLDivElement>(null);
   const chapterRef = useRef<HTMLDivElement>(null);
   const verseRef = useRef<HTMLDivElement>(null);
 
   const books = useMemo(() => booksIndex, []);
-  const currentBook = useMemo(() => books.find(b => b.code === params.book), [params.book, books]);
+  const currentBook = useMemo(() => books.find(b => b.code === bookCode), [bookCode, books]);
+  const chapterInt = parseInt(chapter);
+  const verseInt = parseInt(verse);
+
+  // Handlers de UI
+  const handleBookChange = (code: string) => {
+    updateUrl({ book: code, chapter: "1", verse: "1" });
+    setIsBookOpen(false);
+  };
+
+  const handleChapterChange = (newChapter: string) => {
+    updateUrl({ chapter: newChapter, verse: "1" });
+    setIsChapterOpen(false);
+  };
+
+  const handleVerseChange = (newVerse: string) => {
+    updateUrl({ verse: newVerse });
+    setIsVerseOpen(false);
+  };
+
+  const handlePrevVerse = () => {
+    if (verseInt > 1) {
+      updateUrl({ verse: (verseInt - 1).toString() });
+    } else if (chapterInt > 1) {
+      updateUrl({ chapter: (chapterInt - 1).toString(), verse: "1" });
+    }
+  };
+
+  const handleNextVerse = () => {
+    updateUrl({ verse: (verseInt + 1).toString() });
+  };
 
   // Cerrar selectores al hacer click fuera
   useEffect(() => {
@@ -133,160 +96,6 @@ export default function InterlinearView() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Cargar datos del libro (español)
-  useEffect(() => {
-    let isMounted = true;
-    async function loadSpanishBook() {
-      if (!params.book) return;
-      try {
-        const data = await fetchBibleBook(params.book);
-        if (isMounted) {
-          setBookData(data);
-        }
-      } catch (err) {
-        console.error("Error loading spanish book:", err);
-        if (isMounted) setBookData(null);
-      }
-    }
-    loadSpanishBook();
-    return () => { isMounted = false; };
-  }, [params.book]);
-
-  const spanishVerse = useMemo(() => {
-    if (!bookData || !params.chapter || !params.verse) return null;
-
-    const chapterData = bookData.capitulo || bookData.capitulos;
-    if (!chapterData) return null;
-
-    const chapter = chapterData[params.chapter];
-    if (!chapter) return null;
-
-    const content = chapter[params.verse];
-    if (!content) return null;
-
-    if (typeof content === "string") return content;
-    if (typeof content === "object") return content.texto || content.text || null;
-    return null;
-  }, [bookData, params.chapter, params.verse]);
-
-  // Actualizar URL cuando cambian los parámetros
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("book", params.book);
-    url.searchParams.set("chapter", params.chapter);
-    url.searchParams.set("verse", params.verse);
-    window.history.replaceState({}, "", url.toString());
-
-    // Guardar última posición
-    lastInterlinearPosition.set({
-      lastBook: params.book,
-      lastChapter: params.chapter,
-      lastVerse: params.verse
-    });
-  }, [params.book, params.chapter, params.verse]);
-
-  const [interlinearData, setInterlinearData] = useState<InterlinearData | null>(null);
-
-  // Cargar datos del libro interlineal completo (solo cuando cambia el libro)
-  useEffect(() => {
-    let isMounted = true;
-    const fetchBookData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const fileName = bookMapping[params.book] || params.book;
-        const subDir = currentBook?.section === 'at' ? 'hebrew' : 'greek';
-        const data: InterlinearData = await fetchWithCache<any>(`/data/bible/${subDir}/${fileName}.json`);
-
-        if (isMounted) {
-          setInterlinearData(data);
-        }
-      } catch (err: any) {
-        console.error("Error loading interlinear data:", err);
-        if (isMounted) {
-          setError(err.message);
-          setInterlinearData(null);
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchBookData();
-    return () => { isMounted = false; };
-  }, [params.book]);
-
-  // Actualizar datos del capítulo cuando cambian los parámetros o los datos del libro
-  useEffect(() => {
-    if (!interlinearData) return;
-
-    // Filtrar solo los versículos del capítulo actual
-    const chapterVerses = interlinearData.filter(v => v.chapter === parseInt(params.chapter));
-    setChapterData(chapterVerses);
-
-    // Encontrar el versículo específico
-    const verse = chapterVerses.find(v => v.verse === parseInt(params.verse));
-    if (verse) {
-      setVerseData(verse);
-    } else if (chapterVerses.length > 0) {
-      setVerseData(chapterVerses[0]);
-      setParams(prev => ({ ...prev, verse: String(chapterVerses[0].verse) }));
-    } else {
-      setVerseData(null);
-    }
-  }, [interlinearData, params.chapter, params.verse]);
-
-  const handleBookChange = (code: string) => {
-    setParams(prev => ({ ...prev, book: code, chapter: "1", verse: "1" }));
-    setIsBookOpen(false);
-  };
-
-  const handleChapterChange = (chapter: string) => {
-    setParams(prev => ({ ...prev, chapter, verse: "1" }));
-    setIsChapterOpen(false);
-  };
-
-  const handleVerseChange = (verse: string) => {
-    setParams(prev => ({ ...prev, verse }));
-    setIsVerseOpen(false);
-  };
-
-  const navigateVerse = (direction: number) => {
-    const currentVerse = parseInt(params.verse);
-    const newVerse = currentVerse + direction;
-
-    // Verificar si el nuevo versículo existe en el capítulo actual
-    const exists = chapterData.some(v => v.verse === newVerse);
-
-    if (exists) {
-      setParams(prev => ({ ...prev, verse: String(newVerse) }));
-    } else if (direction > 0) {
-      // Ir al siguiente capítulo si es posible
-      const nextChapter = parseInt(params.chapter) + 1;
-      if (currentBook && nextChapter <= currentBook.chapters) {
-        setParams(prev => ({ ...prev, chapter: String(nextChapter), verse: "1" }));
-      }
-    } else if (direction < 0) {
-      // Ir al capítulo anterior si es posible
-      const prevChapter = parseInt(params.chapter) - 1;
-      if (prevChapter > 0) {
-        setParams(prev => ({ ...prev, chapter: String(prevChapter), verse: "1" }));
-      }
-    }
-  };
-
-  const hasPrevVerse = useMemo(() => {
-    return !(params.book === 'gen' && params.chapter === '1' && params.verse === '1');
-  }, [params]);
-
-  const hasNextVerse = useMemo(() => {
-    if (!currentBook) return false;
-    const isLastBook = params.book === 'rev';
-    const isLastChapter = params.chapter === String(currentBook.chapters);
-    const isLastVerse = chapterData.length > 0 && params.verse === String(chapterData[chapterData.length - 1].verse);
-    return !(isLastBook && isLastChapter && isLastVerse);
-  }, [params, currentBook, chapterData]);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
@@ -522,7 +331,7 @@ export default function InterlinearView() {
             </div>
 
             {/* Traducción de referencia en español */}
-            {spanishVerse && (
+            {currentBibleVerse && (
               <div className="mt-auto mb-8 p-6 sm:p-8 rounded-3xl bg-theme-text/5 border border-theme-text/10 flex gap-5 items-start animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 <div className="p-3 rounded-2xl bg-[var(--color-link)]/10 text-[var(--color-link)] shadow-inner ui-protect flex items-center justify-center shrink-0">
                   <Info className="w-6 h-6" />
@@ -537,14 +346,14 @@ export default function InterlinearView() {
                     }}
                     dangerouslySetInnerHTML={{
                       __html: $preferences.showRedLetters
-                        ? formatRedLetters(spanishVerse, params.book, parseInt(params.chapter), parseInt(params.verse))
-                        : spanishVerse
+                        ? currentBibleVerse.text
+                        : currentBibleVerse.text.replace(/<span class="red-letter">/g, '').replace(/<\/span>/g, '')
                     }}
                   />
                 </div>
               </div>
             )}
-            {!spanishVerse && !loading && (
+            {!currentBibleVerse && !loading && (
               <div className="mt-auto mb-8 p-6 text-center border-2 border-dashed border-theme-text/10 rounded-3xl opacity-30 text-sm font-medium italic">
                 Traducción de referencia no disponible para este versículo.
               </div>
