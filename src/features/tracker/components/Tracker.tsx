@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import { useTracker, type Book } from "../hooks/useTracker";
+import { useTracker, type Book } from "../../../application/tracker/hooks/useTracker";
 import ChapterModal from "./ChapterModal";
 import { RotateCcw, Check } from "lucide-preact";
 

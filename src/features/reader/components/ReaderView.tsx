@@ -312,9 +312,9 @@ export default function ReaderView() {
                                                             </span>
                                                             <span class="sr-only">Versículo {num} </span>
                                                             <span dangerouslySetInnerHTML={{
-                                                                __html: $preferences.showRedLetters
+                                                                __html: sanitizeHTML($preferences.showRedLetters
                                                                     ? formatRedLetters(verseText, result.book, result.chapter, verseNum)
-                                                                    : verseText
+                                                                    : verseText)
                                                             }} />
                                                         </p>
                                                     </div>

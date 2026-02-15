@@ -16,7 +16,7 @@ export function useTTS() {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             synth.current = window.speechSynthesis;
-            
+
             // Wake up speech engine on mobile/Safari
             const wakeUp = () => {
                 if (synth.current) {
@@ -39,7 +39,7 @@ export function useTTS() {
 
             window.addEventListener('beforeunload', handleNavigation);
             window.addEventListener('popstate', handleNavigation);
-            
+
             // Astro View Transitions support
             document.addEventListener('astro:before-preparation', handleNavigation);
             document.addEventListener('astro:after-swap', handleNavigation);
@@ -75,12 +75,12 @@ export function useTTS() {
             // The pause/resume trick is mainly for Chrome on Desktop to prevent the 15s timeout
             // On mobile it can be unstable, so we use it sparingly
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            
+
             if (synth.current?.speaking && !synth.current?.paused && !isMobile) {
                 synth.current.pause();
                 synth.current.resume();
             }
-            
+
             timeoutId = setTimeout(keepAlive, 10000);
         };
 
@@ -161,7 +161,7 @@ export function useTTS() {
         // IMPORTANT: Always reset engine and clear everything before starting new audio
         // to prevent context loss bugs on chapter changes
         synth.current.cancel();
-        
+
         // Wait for cancel to propagate (especially on mobile)
         setTimeout(() => {
             setIsLoading(true);
@@ -180,7 +180,7 @@ export function useTTS() {
             elementsRef.current = elements;
             currentIndexRef.current = 0;
             utterancesRef.current = []; // Reset GC protection
-            
+
             const speakNext = () => {
                 if (isStoppingRef.current) return;
 
@@ -200,7 +200,7 @@ export function useTTS() {
                 const currentPrefs = preferences.get();
 
                 if (currentPrefs.skipVerses) {
-                    clone.querySelectorAll('.verse-num, sup').forEach(el => {
+                    clone.querySelectorAll('.verse-num, sup, .sr-only').forEach(el => {
                         el.textContent = ' ';
                         el.remove();
                     });
@@ -241,13 +241,13 @@ export function useTTS() {
                 u.onstart = () => {
                     if (isStoppingRef.current) return;
                     setIsLoading(false);
-                    
+
                     document.querySelectorAll('.speaking-highlight').forEach(el =>
                         el.classList.remove('speaking-highlight')
                     );
-                    
+
                     element.classList.add('speaking-highlight');
-                    
+
                     const rect = element.getBoundingClientRect();
                     const isVisible = (rect.top >= 50 && rect.bottom <= window.innerHeight - 50);
                     if (!isVisible) {
@@ -258,7 +258,7 @@ export function useTTS() {
                 u.onend = () => {
                     if (isStoppingRef.current) return;
                     currentIndexRef.current++;
-                    
+
                     if (document.body.contains(element) && currentIndexRef.current < elementsRef.current.length) {
                         // Small delay between utterances for better stability on mobile
                         setTimeout(speakNext, 150);
@@ -277,7 +277,7 @@ export function useTTS() {
                         }
                         return;
                     }
-                    
+
                     // On some mobile browsers, 'not-allowed' or 'network' might happen
                     // We try to skip the problematic verse and continue
                     console.error('TTS Error:', event.error, event);
@@ -290,7 +290,7 @@ export function useTTS() {
                 };
 
                 utterance.current = u;
-                
+
                 // Use a slightly larger delay for subsequent utterances on mobile
                 const delay = currentIndexRef.current === 0 ? 0 : 100;
                 setTimeout(() => {

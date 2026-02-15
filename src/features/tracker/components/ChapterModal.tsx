@@ -1,5 +1,5 @@
 import { X, Check } from "lucide-preact";
-import type { Book } from "../hooks/useTracker";
+import type { Book } from "../../../application/tracker/hooks/useTracker";
 
 type Props = {
   book: Book;
