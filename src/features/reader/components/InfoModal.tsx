@@ -1,4 +1,6 @@
 import { X, MessageSquare, ExternalLink, Heart, ShieldCheck, Anchor, GraduationCap, User } from "lucide-preact";
+import { createPortal } from "preact/compat";
+import { useEffect, useState } from "preact/hooks";
 
 type Props = {
     isOpen: boolean;
@@ -6,9 +8,21 @@ type Props = {
 };
 
 export default function InfoModal({ isOpen, onClose }: Props) {
-    if (!isOpen) return null;
+    const [mounted, setMounted] = useState(false);
 
-    return (
+    useEffect(() => {
+        setMounted(true);
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
+    if (!isOpen || !mounted) return null;
+
+    return createPortal(
         <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all"
             role="dialog"
@@ -183,6 +197,7 @@ export default function InfoModal({ isOpen, onClose }: Props) {
                     </a>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

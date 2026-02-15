@@ -1,5 +1,7 @@
 import { X, Check } from "lucide-preact";
 import type { Book } from "../../../application/tracker/hooks/useTracker";
+import { createPortal } from "preact/compat";
+import { useEffect, useState } from "preact/hooks";
 
 type Props = {
   book: Book;
@@ -10,13 +12,26 @@ type Props = {
 };
 
 export default function ChapterModal({ book, completedChapters, onToggleChapter, onClose, isOpen }: Props) {
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // Bloquear scroll del body cuando el modal está abierto
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  if (!isOpen || !mounted) return null;
 
   const chapters = Array.from({ length: book.chapters }, (_, i) => i + 1);
   const progress = Number(((completedChapters.length / book.chapters) * 100).toFixed(1));
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all" onClick={onClose}>
       <div
         className="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-base leading-normal tracking-normal"
         onClick={(e) => e.stopPropagation()}
@@ -113,6 +128,7 @@ export default function ChapterModal({ book, completedChapters, onToggleChapter,
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
