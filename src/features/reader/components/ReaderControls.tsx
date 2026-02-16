@@ -125,26 +125,35 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
 
         const results = parseBibleQuery(searchQuery);
         if (results.length > 0) {
+            let url = '';
+            let detail = {};
+
             if (results.length === 1 && !results[0].verses) {
                 // Navegación normal para un solo capítulo sin versículos específicos
-                const url = `/?book=${results[0].book}&chapter=${results[0].chapter}`;
+                url = `/?book=${results[0].book}&chapter=${results[0].chapter}`;
 
                 // Actualizar persistencia
                 lastBiblePosition.set({ lastBook: results[0].book, lastChapter: results[0].chapter.toString() });
 
-                window.history.pushState({}, '', url);
-                window.dispatchEvent(new CustomEvent('app:navigate', {
-                    detail: { book: results[0].book, chapter: results[0].chapter.toString() }
-                }));
+                detail = { book: results[0].book, chapter: results[0].chapter.toString() };
             } else {
                 // Vista Multi-Pasaje (Logos Style)
                 const searchParam = encodeURIComponent(searchQuery);
-                const url = `/?search=${searchParam}`;
-                window.history.pushState({}, '', url);
-                window.dispatchEvent(new CustomEvent('app:navigate', {
-                    detail: { search: searchQuery }
-                }));
+                url = `/?search=${searchParam}`;
+                detail = { search: searchQuery };
             }
+
+            // Si estamos en la raíz (Biblia), navegación SPA
+            // Usamos window.location.pathname === '/' para asegurar que estamos en la vista de Biblia
+            if (window.location.pathname === '/') {
+                window.history.pushState({}, '', url);
+                window.dispatchEvent(new CustomEvent('app:navigate', { detail }));
+            } else {
+                // Si estamos en otra vista (ej. Comentario, Planes), forzar navegación a la Biblia
+                // Esto previene que el Comentario capture el evento app:navigate
+                window.location.href = url;
+            }
+
             setIsOpen(false);
         }
     };
