@@ -366,7 +366,7 @@ export default function InterlinearView() {
                 <span>Explora la morfología pasando el cursor</span>
               </div>
               <div className="flex items-center gap-3">
-                <span>Biblia Hebraica</span>
+                <span>{currentBook?.section === 'at' ? 'Biblia Hebraica' : 'Nuevo Testamento Griego'}</span>
               </div>
             </div>
           </div>
