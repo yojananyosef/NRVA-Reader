@@ -1,4 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
+import { createPortal } from "preact/compat";
 import { ChevronLeft, X, Check, Eye, EyeOff, Info } from "lucide-preact";
 import { fetchWithCache } from "../../../utils/fetchWithCache";
 import { fetchBibleBook, type LocalVerse } from "../../../utils/bibleService";
@@ -54,6 +55,22 @@ export default function PlanDay({
   const [chapterVerses, setChapterVerses] = useState<Verse[]>([]);
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [viewMode, setViewMode] = useState<"full" | "partial">("full");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (openReading || openEgw) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [openReading, openEgw]);
 
   // Helper to parse verse ranges like "1-15" or "1,2,5"
   const parseVerseRange = (range: string): number[] => {
@@ -474,22 +491,24 @@ export default function PlanDay({
         )}
       </section>
 
-      {(openReading || openEgw) && (
+      {mounted && (openReading || openEgw) && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          aria-modal="true"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all"
           role="dialog"
+          aria-modal="true"
         >
+          {/* Backdrop con el color de fondo del tema */}
           <div
-            className="absolute inset-0"
-            style={{
-              backgroundColor: "var(--color-bg)",
-              opacity: 1
-            }}
+            className="absolute inset-0 bg-[var(--color-bg)] opacity-80 backdrop-blur-sm"
             onClick={closeModal}
             aria-hidden="true"
           />
-          <div className="relative z-50 w-full max-w-2xl mx-4 rounded-xl border surface-card flex flex-col shadow-2xl max-h-[90vh]" style={{ backgroundColor: "var(--color-bg)" }}>
+
+          <div
+            className="relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-base leading-normal tracking-normal flex flex-col max-h-[90vh] border surface-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ backgroundColor: "var(--color-bg)", color: "var(--color-text)" }}
+          >
             <div className="p-6 border-b shrink-0" style={{ borderColor: "color-mix(in srgb, var(--color-text), transparent 85%)" }}>
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
@@ -653,7 +672,8 @@ export default function PlanDay({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
