@@ -1,6 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { ChevronLeft, X, Check, Eye, EyeOff, Info } from "lucide-preact";
 import { fetchWithCache } from "../../../utils/fetchWithCache";
+import { fetchBibleBook } from "../../../utils/bibleService";
 import { formatRedLetters } from "../../../utils/redLetterUtils";
 import { preferences } from "../../../stores/preferences";
 import { useStore } from "@nanostores/preact";
@@ -231,7 +232,7 @@ export default function PlanDay({
     setViewMode(r.verses ? "partial" : "full");
 
     try {
-      const data = await fetchWithCache<any>(`/data/books/${r.book.toLowerCase()}.json`);
+      const data = await fetchBibleBook(r.book.toLowerCase());
       const rawVerses = data?.capitulo?.[String(r.chapter)] ?? {};
 
       const requiredVerses = r.verses ? parseVerseRange(r.verses) : [];
