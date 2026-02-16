@@ -19,18 +19,28 @@ interface UseBibleSearchReturn {
  * Parsea la consulta, obtiene los datos de los libros necesarios y gestiona el estado de la vista.
  */
 export function useBibleSearch(searchQuery: string): UseBibleSearchReturn {
+    const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
     const [searchResults, setSearchResults] = useState<BiblePassage[]>([]);
     const [multiPassageData, setMultiPassageData] = useState<Record<string, any>>({});
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
     const [collapsedPassages, setCollapsedPassages] = useState<Record<string, boolean>>({});
 
-    // 1. Parsear la consulta cuando cambia
+    // Debounce de la consulta
     useEffect(() => {
-        if (searchQuery) {
+        const timer = setTimeout(() => {
+            setDebouncedQuery(searchQuery);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // 1. Parsear la consulta cuando cambia (usando el valor con debounce)
+    useEffect(() => {
+        if (debouncedQuery) {
             try {
                 // Parsear la consulta
-                const parsed = parseBibleQuery(searchQuery);
+                const parsed = parseBibleQuery(debouncedQuery);
                 setSearchResults(parsed);
                 // Resetear estados al cambiar búsqueda
                 setCollapsedPassages({});
@@ -44,11 +54,11 @@ export function useBibleSearch(searchQuery: string): UseBibleSearchReturn {
             setSearchResults([]);
             setMultiPassageData({});
         }
-    }, [searchQuery]);
+    }, [debouncedQuery]);
 
     // 2. Cargar datos de libros necesarios
     useEffect(() => {
-        if (!searchQuery || searchResults.length === 0) {
+        if (!debouncedQuery || searchResults.length === 0) {
             setLoading(false);
             return;
         }

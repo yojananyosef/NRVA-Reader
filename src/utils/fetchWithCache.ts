@@ -1,8 +1,47 @@
 const CACHE_NAME = 'astro-reader-data-v4';
 const TTL = 7 * 24 * 60 * 60 * 1000; // 7 días en milisegundos
 
-// Caché en memoria para acceso ultrarrápido durante la sesión actual
-const memoryCache = new Map<string, any>();
+// Clase LRU Cache simple
+class LRUCache<K, V> {
+    private capacity: number;
+    private cache: Map<K, V>;
+
+    constructor(capacity: number) {
+        this.capacity = capacity;
+        this.cache = new Map<K, V>();
+    }
+
+    get(key: K): V | undefined {
+        if (!this.cache.has(key)) return undefined;
+        const value = this.cache.get(key)!;
+        this.cache.delete(key);
+        this.cache.set(key, value);
+        return value;
+    }
+
+    set(key: K, value: V): void {
+        if (this.cache.has(key)) {
+            this.cache.delete(key);
+        } else if (this.cache.size >= this.capacity) {
+            const firstKey = this.cache.keys().next().value;
+            if (firstKey !== undefined) {
+                this.cache.delete(firstKey);
+            }
+        }
+        this.cache.set(key, value);
+    }
+
+    has(key: K): boolean {
+        return this.cache.has(key);
+    }
+
+    clear(): void {
+        this.cache.clear();
+    }
+}
+
+// Caché en memoria con LRU (Límite de 50 items)
+const memoryCache = new LRUCache<string, any>(50);
 
 interface CacheEntry<T> {
     data: T;
@@ -41,7 +80,7 @@ export async function fetchWithCache<T>(url: string): Promise<T> {
         }
 
         const data = await response.json();
-        
+
         // Guardar en memoria
         memoryCache.set(url, data);
 
@@ -50,7 +89,7 @@ export async function fetchWithCache<T>(url: string): Promise<T> {
             data,
             timestamp: Date.now()
         };
-        
+
         const blob = new Blob([JSON.stringify(entryToCache)], { type: 'application/json' });
         const cacheResponse = new Response(blob);
         await cache.put(url, cacheResponse);
@@ -58,7 +97,7 @@ export async function fetchWithCache<T>(url: string): Promise<T> {
         return data;
     } catch (error) {
         console.error(`Cache API error for ${url}:`, error);
-        
+
         // Fallback: si falla la Cache API (por ejemplo en modo incógnito), intentar fetch normal
         const response = await fetch(url);
         return await response.json();
