@@ -58,7 +58,7 @@ export default function Tracker() {
         </div>
 
         <div className="rounded-3xl p-8 shadow-sm border w-full max-w-2xl flex flex-col md:flex-row items-center justify-around gap-8"
-          style={{ backgroundColor: "var(--color-bg)", borderColor: "color-mix(in srgb, var(--color-text), transparent 90%)" }}>
+          style={{ backgroundColor: "var(--surface-muted-bg)", borderColor: "var(--surface-muted-border)" }}>
 
           {/* Circular Progress */}
           <div className="relative w-48 h-48 flex items-center justify-center">
@@ -164,11 +164,11 @@ function Section({ title, books, onSelect, getProgress }: { title: string, books
               }}
               className="group relative p-4 rounded-xl border transition-all duration-200 text-left hover:shadow-md cursor-pointer flex flex-col justify-between h-32"
               style={{
-                backgroundColor: "var(--color-bg)",
-                borderColor: "color-mix(in srgb, var(--color-text), transparent 85%)"
+                backgroundColor: "var(--surface-muted-bg)",
+                borderColor: "var(--surface-muted-border)"
               }}
               onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--color-link)')}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = 'color-mix(in srgb, var(--color-text), transparent 85%)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--surface-muted-border)')}
             >
               <div className="flex justify-between items-start mb-2">
                 <span className="font-bold text-lg leading-tight">{book.name}</span>

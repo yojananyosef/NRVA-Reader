@@ -131,12 +131,12 @@ export default function InterlinearView() {
       </header>
 
       {/* Selectores Custom */}
-      <div className="flex flex-wrap items-center justify-center gap-3 p-2 rounded-2xl bg-theme-text/5 border border-theme-text/10 max-w-fit mx-auto relative z-50 shadow-sm transition-colors duration-300 ui-protect">
+      <div className="flex flex-wrap items-center justify-center gap-3 p-2 rounded-2xl bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] max-w-fit mx-auto relative z-50 shadow-sm transition-colors duration-300 ui-protect">
         {/* Book Selector */}
         <div className="relative" ref={bookRef}>
           <button
             onClick={() => { setIsBookOpen(!isBookOpen); setIsChapterOpen(false); setIsVerseOpen(false); }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-200 border text-sm ui-protect ${isBookOpen ? 'bg-[var(--color-link)] text-white shadow-lg border-transparent' : 'hover:bg-theme-text/5 text-[var(--color-text)] border-theme-text/10 shadow-sm'}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-200 border text-sm ui-protect ${isBookOpen ? 'bg-[var(--color-link)] text-white shadow-lg border-transparent' : 'hover:bg-[var(--surface-hover-bg)] text-[var(--color-text)] border-[var(--surface-muted-border)] shadow-sm'}`}
           >
             <div className={`p-1 rounded-lg ${isBookOpen ? 'bg-white/20' : 'bg-[var(--color-link)]/10 text-[var(--color-link)]'}`}>
               <Book className="w-3.5 h-3.5" />
@@ -154,7 +154,7 @@ export default function InterlinearView() {
                   <button
                     key={b.code}
                     onClick={() => handleBookChange(b.code)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs transition-colors ui-protect ${b.code === params.book ? 'bg-[var(--color-link)]/10 text-[var(--color-link)] font-bold' : 'hover:bg-theme-text/5 text-[var(--color-text)] opacity-80 hover:opacity-100'}`}
+                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs transition-colors ui-protect ${b.code === params.book ? 'bg-[var(--color-link)]/10 text-[var(--color-link)] font-bold' : 'hover:bg-[var(--surface-hover-bg)] text-[var(--color-text)] opacity-80 hover:opacity-100'}`}
                   >
                     <span>{b.name}</span>
                     {b.code === params.book && <Check className="w-3.5 h-3.5" />}
@@ -171,7 +171,7 @@ export default function InterlinearView() {
         <div className="relative" ref={chapterRef}>
           <button
             onClick={() => { setIsChapterOpen(!isChapterOpen); setIsBookOpen(false); setIsVerseOpen(false); }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-200 border text-sm ui-protect ${isChapterOpen ? 'bg-[var(--color-link)] text-white shadow-lg border-transparent' : 'hover:bg-theme-text/5 text-[var(--color-text)] border-theme-text/10 shadow-sm'}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-200 border text-sm ui-protect ${isChapterOpen ? 'bg-[var(--color-link)] text-white shadow-lg border-transparent' : 'hover:bg-[var(--surface-hover-bg)] text-[var(--color-text)] border-[var(--surface-muted-border)] shadow-sm'}`}
           >
             <div className={`p-1 rounded-lg ${isChapterOpen ? 'bg-white/20' : 'bg-[var(--color-link)]/10 text-[var(--color-link)]'}`}>
               <Hash className="w-3.5 h-3.5" />
@@ -187,7 +187,7 @@ export default function InterlinearView() {
                   <button
                     key={num}
                     onClick={() => handleChapterChange(num)}
-                    className={`flex items-center justify-center aspect-square rounded-lg text-xs transition-colors ui-protect ${num === params.chapter ? 'bg-[var(--color-link)] text-white font-bold' : 'hover:bg-theme-text/5 text-[var(--color-text)] opacity-80 hover:opacity-100'}`}
+                    className={`flex items-center justify-center aspect-square rounded-lg text-xs transition-colors ui-protect ${num === params.chapter ? 'bg-[var(--color-link)] text-white font-bold' : 'hover:bg-[var(--surface-hover-bg)] text-[var(--color-text)] opacity-80 hover:opacity-100'}`}
                   >
                     {num}
                   </button>
@@ -242,9 +242,9 @@ export default function InterlinearView() {
       <div
         className="relative border rounded-3xl p-6 sm:p-10 min-h-[450px] flex flex-col shadow-sm transition-all duration-300"
         style={{
-          backgroundColor: 'var(--color-bg)',
+          backgroundColor: 'var(--surface-muted-bg)',
           color: 'var(--color-text)',
-          borderColor: 'color-mix(in srgb, var(--color-text), transparent 90%)'
+          borderColor: 'var(--surface-muted-border)'
         }}
       >
 
@@ -303,7 +303,7 @@ export default function InterlinearView() {
                   {word.strong && (
                     <a
                       href={`/strong/${currentBook?.section === 'at' ? 'H' : 'G'}${word.strong}`}
-                      className="text-[11px] opacity-20 hover:opacity-100 hover:text-[var(--color-link)] transition-all absolute -top-5 font-bold tracking-tighter ui-protect"
+                      className="text-[11px] opacity-60 hover:opacity-100 hover:text-[var(--color-link)] transition-all absolute -top-5 font-bold tracking-tighter ui-protect"
                       title={`Lexicón: ${currentBook?.section === 'at' ? 'H' : 'G'}${word.strong}`}
                       data-astro-prefetch
                     >
@@ -332,7 +332,7 @@ export default function InterlinearView() {
 
             {/* Traducción de referencia en español */}
             {currentBibleVerse && (
-              <div className="mt-auto mb-8 p-6 sm:p-8 rounded-3xl bg-theme-text/5 border border-theme-text/10 flex gap-5 items-start animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              <div className="mt-auto mb-8 p-6 sm:p-8 rounded-3xl bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] flex gap-5 items-start animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 <div className="p-3 rounded-2xl bg-[var(--color-link)]/10 text-[var(--color-link)] shadow-inner ui-protect flex items-center justify-center shrink-0">
                   <Info className="w-6 h-6" />
                 </div>

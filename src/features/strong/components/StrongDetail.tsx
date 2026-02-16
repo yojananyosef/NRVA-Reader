@@ -1,5 +1,5 @@
 import { useState, useEffect } from "preact/hooks";
-import { Volume2, Info, BookOpen, BarChart3, ChevronLeft, ChevronRight, Search } from "lucide-preact";
+import { Volume2, Search } from "lucide-preact";
 import type { StrongData } from "../types";
 import ArrowNavigation from "../../../components/common/ArrowNavigation";
 import { fetchWithCache } from "../../../utils/fetchWithCache";
@@ -29,12 +29,12 @@ export default function StrongDetail({ id, initialData }: Props) {
   const [data, setData] = useState<StrongData | null>(initialData ? formatData(initialData) : null);
   const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"def" | "gram" | "freq">("def");
+  const [] = useState<"def" | "gram" | "freq">("def");
   const [searchQuery, setSearchQuery] = useState("");
 
   const type = id.startsWith('G') ? 'G' : 'H';
   const numericId = parseInt(id.replace(/^[HG]/, ""));
-  
+
   // Límites aproximados (H: 8674, G: 5624) - Usaremos 8680 para H según comentario del usuario
   const maxH = 8680;
   const maxG = 5624;
@@ -46,7 +46,7 @@ export default function StrongDetail({ id, initialData }: Props) {
   useEffect(() => {
     // Si el ID cambia, reseteamos el estado de búsqueda para evitar confusiones
     setSearchQuery("");
-    
+
     if (initialData && (initialData.strongNumber === id || `H${initialData.strongNumber}` === id || `G${initialData.strongNumber}` === id)) {
       setData(formatData(initialData));
       setLoading(false);
@@ -110,7 +110,7 @@ export default function StrongDetail({ id, initialData }: Props) {
     const typeFolder = id.startsWith('G') ? 'greek' : 'hebrew';
     const numericId = parseInt(id.replace(/^[HG]/, ""));
     const audioUrl = `/audio/strong/${typeFolder}/${numericId}.mp3`;
-    
+
     console.log("Reproduciendo audio desde:", audioUrl);
     const audio = new Audio(audioUrl);
     audio.play().catch(e => {
@@ -127,7 +127,7 @@ export default function StrongDetail({ id, initialData }: Props) {
   if (error || !data) return (
     <div className="flex flex-col items-center justify-center min-h-[400px] text-[var(--color-text)] opacity-60">
       <p className="text-xl mb-4">{error || "No se encontraron datos."}</p>
-      <button 
+      <button
         onClick={() => window.history.back()}
         className="text-[var(--color-link)] hover:underline"
       >
@@ -138,7 +138,7 @@ export default function StrongDetail({ id, initialData }: Props) {
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 p-4 relative">
-      <ArrowNavigation 
+      <ArrowNavigation
         prevHref={prevId ? `/strong/${prevId}` : undefined}
         nextHref={nextId ? `/strong/${nextId}` : undefined}
         prevLabel="Anterior"
@@ -158,7 +158,7 @@ export default function StrongDetail({ id, initialData }: Props) {
             />
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text)] opacity-40 pointer-events-none" />
           </div>
-          <div 
+          <div
             onClick={(e) => {
               // Buscar el formulario padre y disparar el submit
               const form = e.currentTarget.closest('form');
@@ -181,11 +181,11 @@ export default function StrongDetail({ id, initialData }: Props) {
       </div>
 
       {/* Contenido Estilo LogosKLogos */}
-      <div className="bg-[var(--color-bg)] border-2 border-[var(--color-link)] border-opacity-20 rounded-2xl p-8 mt-8 relative shadow-sm">
+      <div className="bg-[var(--surface-muted-bg)] border-2 border-[var(--color-link)] border-opacity-20 rounded-2xl p-8 mt-8 relative shadow-sm">
         <div className="flex justify-center mb-10">
-            <h2 className="text-2xl font-bold text-[var(--color-text)] uppercase tracking-widest text-center max-w-2xl">
-              {data.id.replace(/^[HG]/, '')} {data.definitions.reinaValeraDefinition?.split(/[,;.]/)[0] || data.definitions.definition.split(/[,;.]/)[0]}
-            </h2>
+          <h2 className="text-2xl font-bold text-[var(--color-text)] uppercase tracking-widest text-center max-w-2xl">
+            {data.id.replace(/^[HG]/, '')} {data.definitions.reinaValeraDefinition?.split(/[,;.]/)[0] || data.definitions.definition.split(/[,;.]/)[0]}
+          </h2>
         </div>
 
         <div className="space-y-6">
@@ -231,13 +231,13 @@ export default function StrongDetail({ id, initialData }: Props) {
         </div>
 
         <div className="absolute top-8 left-8">
-           <div 
-             onClick={playAudio}
-             className="bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] rounded-xl hover:bg-[var(--surface-hover-bg)] transition-all w-[44px] h-[44px] flex items-center justify-center flex-shrink-0 p-0 cursor-pointer text-[var(--color-link)]"
-             aria-label="Reproducir audio"
-           >
-             <Volume2 size={24} strokeWidth={2} />
-           </div>
+          <div
+            onClick={playAudio}
+            className="bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] rounded-xl hover:bg-[var(--surface-hover-bg)] transition-all w-[44px] h-[44px] flex items-center justify-center flex-shrink-0 p-0 cursor-pointer text-[var(--color-link)]"
+            aria-label="Reproducir audio"
+          >
+            <Volume2 size={24} strokeWidth={2} />
+          </div>
         </div>
       </div>
     </div>

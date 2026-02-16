@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "preact/hooks";
-import { Search, ChevronLeft, ChevronRight, Volume2 } from "lucide-preact";
+import { Search, Volume2 } from "lucide-preact";
 import { fetchWithCache } from "../../../utils/fetchWithCache";
 import ArrowNavigation from "../../../components/common/ArrowNavigation";
 
@@ -33,7 +33,7 @@ export default function StrongDictionary() {
         const url = "/data/strong/strong-data.json" + (forceRefresh ? `?v=${Date.now()}` : "");
         const json = await fetchWithCache<any>(url);
         setData(json);
-        
+
         // Si el tipo es griego y está vacío, podría ser un problema de caché
         const params = new URLSearchParams(window.location.search);
         const type = params.get("type");
@@ -55,7 +55,7 @@ export default function StrongDictionary() {
       const params = new URLSearchParams(window.location.search);
       const type = params.get("type") as "hebrew" | "greek";
       const search = params.get("search") || "";
-      
+
       if (type && (type === "hebrew" || type === "greek")) {
         setDictionaryType(type);
       }
@@ -67,7 +67,7 @@ export default function StrongDictionary() {
 
     window.addEventListener("popstate", handleUrlChange);
     document.addEventListener("astro:after-swap", handleUrlChange);
-    
+
     return () => {
       window.removeEventListener("popstate", handleUrlChange);
       document.removeEventListener("astro:after-swap", handleUrlChange);
@@ -82,11 +82,11 @@ export default function StrongDictionary() {
       id: `${prefix}${id}`,
       ...details
     }));
-    
+
     if (!searchTerm) return items;
-    
+
     const term = searchTerm.toLowerCase();
-    return items.filter(item => 
+    return items.filter(item =>
       item.id.toLowerCase().includes(term) ||
       (item.originalWord && item.originalWord.toLowerCase().includes(term)) ||
       (item.definition && item.definition.toLowerCase().includes(term)) ||
@@ -141,26 +141,26 @@ export default function StrongDictionary() {
               className="px-4 py-2 bg-[var(--color-bg)] border border-[var(--color-text)] border-opacity-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-link)] w-64 text-[var(--color-text)] h-[40px]"
             />
           </div>
-          <div 
-              className="bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] rounded-xl hover:bg-[var(--surface-hover-bg)] transition-all w-[44px] h-[44px] flex items-center justify-center flex-shrink-0 p-0 cursor-pointer"
-              title="Buscar"
-            >
-              <Search size={20} strokeWidth={2} className="text-[var(--color-link)]" />
-            </div>
+          <div
+            className="bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] rounded-xl hover:bg-[var(--surface-hover-bg)] transition-all w-[44px] h-[44px] flex items-center justify-center flex-shrink-0 p-0 cursor-pointer"
+            title="Buscar"
+          >
+            <Search size={20} strokeWidth={2} className="text-[var(--color-link)]" />
+          </div>
         </div>
       </div>
 
-      <ArrowNavigation 
+      <ArrowNavigation
         onPrev={currentPage > 1 ? () => setCurrentPage(p => p - 1) : undefined}
         onNext={currentPage < totalPages ? () => setCurrentPage(p => p + 1) : undefined}
         prevLabel="Página anterior"
         nextLabel="Siguiente página"
       />
 
-      <div className="bg-[var(--color-bg)] rounded-2xl border border-[var(--color-text)] border-opacity-5 overflow-hidden">
+      <div className="bg-[var(--surface-muted-bg)] rounded-2xl border border-[var(--surface-muted-border)] overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-[var(--color-text)] border-opacity-5 text-sm font-medium text-[var(--color-text)] opacity-40">
+            <tr className="border-b border-[var(--surface-muted-border)] text-sm font-medium text-[var(--color-text)] opacity-40">
               <th className="px-6 py-4">Cód.</th>
               <th className="px-6 py-4">Palab.Orig.</th>
               <th className="px-6 py-4">Pron.</th>
@@ -168,13 +168,13 @@ export default function StrongDictionary() {
               <th className="px-6 py-4"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-text)] divide-opacity-5">
+          <tbody className="divide-y divide-[var(--surface-muted-border)]">
             {paginatedItems.map((item) => (
-              <tr key={item.id} className="hover:bg-[color-mix(in_srgb,var(--color-link),transparent_90%)] transition-colors group border-b border-[var(--color-text)] border-opacity-5">
+              <tr key={item.id} className="hover:bg-[color-mix(in_srgb,var(--color-link),transparent_90%)] transition-colors group border-b border-[var(--surface-muted-border)]">
                 <td className="px-6 py-4">
-                  <a 
-                    href={`/strong/${item.id}`} 
-                    className="font-bold hover:underline transition-colors block text-[var(--color-link)]" 
+                  <a
+                    href={`/strong/${item.id}`}
+                    className="font-bold hover:underline transition-colors block text-[var(--color-link)]"
                     data-astro-prefetch
                   >
                     {item.id.replace(/^[HG]/, '')}
@@ -190,7 +190,7 @@ export default function StrongDictionary() {
                   {item.definition}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <div 
+                  <div
                     onClick={() => playAudio(item.id)}
                     className="bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] rounded-xl hover:bg-[var(--surface-hover-bg)] transition-all w-[44px] h-[44px] flex items-center justify-center flex-shrink-0 p-0 cursor-pointer text-[var(--color-link)] ml-auto"
                   >

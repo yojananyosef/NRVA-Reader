@@ -21,7 +21,7 @@ export default function HomeHeader({ progress }: HomeHeaderProps) {
             </div>
 
             {/* Weekly Streak View */}
-            <div class="bg-theme-text/5 rounded-2xl p-4 flex flex-col items-center min-w-[280px]">
+            <div class="bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] rounded-2xl p-4 flex flex-col items-center min-w-[280px]">
                 <div class="flex items-center gap-2 mb-3 text-[var(--color-link)]">
                     <span class="text-2xl">🔥</span>
                     <span class="font-bold text-xl">

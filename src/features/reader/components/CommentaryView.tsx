@@ -126,7 +126,7 @@ export default function CommentaryView() {
             <div class="space-y-6 md:space-y-12">
                 {/* Book Introduction (only on chapter 1) */}
                 {currentChapNumInt === 1 && commentaryData?.introduction && (
-                    <div class="mb-12 p-6 md:p-8 rounded-2xl bg-theme-text/5 border border-theme-text/10 shadow-sm">
+                    <div class="mb-12 p-6 md:p-8 rounded-2xl bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] shadow-sm">
                         {commentaryData.introduction.fullTitle && (
                             <h2 class="text-xl md:text-2xl font-bold mb-2 text-center text-[var(--color-link)] ui-protect">
                                 {commentaryData.introduction.fullTitle}
@@ -160,7 +160,7 @@ export default function CommentaryView() {
                         <div
                             id={`com-${v.verse}`}
                             key={v.verse}
-                            class={`p-2 md:p-4 rounded-xl transition-all duration-300 ${activeCommentary === `com-${v.verse}` ? 'commentary-selected shadow-sm' : 'hover:bg-theme-text/5'}`}
+                            class={`p-2 md:p-4 rounded-xl transition-all duration-300 ${activeCommentary === `com-${v.verse}` ? 'commentary-selected shadow-sm' : 'hover:bg-[var(--surface-hover-bg)]'}`}
                         >
                             <div class="flex items-center gap-2 mb-2 ui-protect">
                                 <span class="bg-[var(--color-link)] text-white text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-full ui-protect">
@@ -178,7 +178,7 @@ export default function CommentaryView() {
                             {v.references && v.references.length > 0 && (
                                 <div class="mt-4 pt-2 border-t border-theme-text/10 flex flex-wrap gap-2">
                                     {v.references.map((ref: string, rIdx: number) => (
-                                        <span key={rIdx} class="text-[10px] opacity-50 bg-theme-text/5 px-1.5 py-0.5 rounded">
+                                        <span key={rIdx} class="text-[10px] opacity-50 bg-[var(--surface-muted-bg)] px-1.5 py-0.5 rounded">
                                             {ref}
                                         </span>
                                     ))}

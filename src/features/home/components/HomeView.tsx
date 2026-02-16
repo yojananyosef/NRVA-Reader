@@ -16,7 +16,7 @@ export default function HomeView() {
             <HomeHeader progress={progress} />
 
             {/* Daily Verse Section - Pan de Vida */}
-            <section class="bg-theme-text/5 rounded-3xl p-6 md:p-10 shadow-sm border border-theme-text/5 relative overflow-hidden">
+            <section class="bg-[var(--surface-muted-bg)] rounded-3xl p-6 md:p-10 shadow-sm border border-[var(--surface-muted-border)] relative overflow-hidden">
                 <div class="absolute top-0 right-0 p-8 opacity-5 transform rotate-12 pointer-events-none">
                     <BookOpen size={120} />
                 </div>
@@ -55,8 +55,8 @@ export default function HomeView() {
                                 <span class="absolute -right-4 -bottom-4 text-6xl text-[var(--color-link)] opacity-20 font-serif rotate-180">"</span>
                             </div>
 
-                            <div class="flex flex-col md:flex-row items-center justify-between gap-6 pt-4 border-t border-theme-text/10">
-                                <div class="font-bold text-xl text-[var(--color-link)] bg-theme-text/5 px-4 py-2 rounded-lg">
+                            <div class="flex flex-col md:flex-row items-center justify-between gap-6 pt-4 border-t border-[var(--surface-muted-border)]">
+                                <div class="font-bold text-xl text-[var(--color-link)] bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] px-4 py-2 rounded-lg">
                                     {dailyVerse.bookName} {dailyVerse.chapter}:{dailyVerse.verse}
                                 </div>
 
