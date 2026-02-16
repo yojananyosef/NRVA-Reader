@@ -3,13 +3,13 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" type="image/svg+xml" href="/pwa-icon.svg" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Astro Basics</title>
 		<script>
-			import { applyThemeToDocument } from '../features/reader/scripts/theme-manager';
-			import { preferences } from '../stores/preferences';
-			
+			import { applyThemeToDocument } from "../features/reader/scripts/theme-manager";
+			import { preferences } from "../stores/preferences";
+
 			// Initial theme application
 			applyThemeToDocument(preferences.get());
 		</script>
