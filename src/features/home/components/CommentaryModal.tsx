@@ -18,10 +18,20 @@ export default function CommentaryModal({ isOpen, onClose, commentary, loading, 
         if (isOpen) {
             document.body.style.overflow = 'hidden';
         }
+
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+
+        window.addEventListener('keydown', handleEscape);
+
         return () => {
             document.body.style.overflow = '';
+            window.removeEventListener('keydown', handleEscape);
         };
-    }, [isOpen]);
+    }, [isOpen, onClose]);
 
     if (!isOpen || !mounted) return null;
 
