@@ -13,6 +13,6 @@ export function getStaticPaths() {
 const { plan } = Astro.props;
 ---
 
-<ReaderLayout>
+<ReaderLayout title={`${plan.title} - Lectura Accesible`}>
   <PlanDetail client:only="preact" plan={plan} />
 </ReaderLayout>

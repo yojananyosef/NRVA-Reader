@@ -5,21 +5,27 @@ import fs from "node:fs";
 import path from "node:path";
 
 export async function getStaticPaths() {
-  const dataPath = path.join(process.cwd(), "public", "data", "strong", "strong-data.json");
-  
+  const dataPath = path.join(
+    process.cwd(),
+    "public",
+    "data",
+    "strong",
+    "strong-data.json",
+  );
+
   try {
     const rawData = fs.readFileSync(dataPath, "utf-8");
     const data = JSON.parse(rawData);
-    
-    const hebrewPaths = Object.keys(data.hebrew || {}).map(id => ({ 
+
+    const hebrewPaths = Object.keys(data.hebrew || {}).map((id) => ({
       params: { id: `H${id}` },
-      props: { initialData: data.hebrew[id] }
+      props: { initialData: data.hebrew[id] },
     }));
-    const greekPaths = Object.keys(data.greek || {}).map(id => ({ 
+    const greekPaths = Object.keys(data.greek || {}).map((id) => ({
       params: { id: `G${id}` },
-      props: { initialData: data.greek[id] }
+      props: { initialData: data.greek[id] },
     }));
-    
+
     return [...hebrewPaths, ...greekPaths];
   } catch (e) {
     console.error("Error al generar rutas estáticas para Strong:", e);
@@ -35,16 +41,16 @@ if (!id) {
 }
 ---
 
-<ReaderLayout>
+<ReaderLayout title={`Strong ${id} - Diccionario Bíblico`}>
   <div class="py-4">
     <StrongDetail id={id} initialData={initialData} client:load />
   </div>
 </ReaderLayout>
 
 <style is:global>
-  @import url('https://fonts.googleapis.com/css2?family=SBL+Hebrew&family=Noto+Sans+Hebrew:wght@400;700&display=swap');
+  @import url("https://fonts.googleapis.com/css2?family=SBL+Hebrew&family=Noto+Sans+Hebrew:wght@400;700&display=swap");
 
   .font-hebrew {
-    font-family: 'SBL Hebrew', 'Noto Sans Hebrew', serif;
+    font-family: "SBL Hebrew", "Noto Sans Hebrew", serif;
   }
 </style>

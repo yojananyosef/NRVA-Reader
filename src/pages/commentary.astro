@@ -3,16 +3,18 @@ import ReaderLayout from "../features/reader/layouts/ReaderLayout.astro";
 import CommentaryContent from "../features/reader/components/CommentaryContent.astro";
 ---
 
-<ReaderLayout>
+<ReaderLayout title="Comentario Bíblico - Lectura Accesible">
 	<script is:inline>
 		// Redirección a la última posición guardada del Comentario
 		if (!window.location.search) {
 			try {
-				const stored = localStorage.getItem('commentary-last-position');
+				const stored = localStorage.getItem("commentary-last-position");
 				if (stored) {
 					const { lastBook, lastChapter } = JSON.parse(stored);
 					if (lastBook && lastChapter) {
-						window.location.replace(`/commentary?book=${lastBook}&chapter=${lastChapter}`);
+						window.location.replace(
+							`/commentary?book=${lastBook}&chapter=${lastChapter}`,
+						);
 					}
 				}
 			} catch (e) {}

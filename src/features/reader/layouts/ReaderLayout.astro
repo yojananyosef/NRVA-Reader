@@ -5,6 +5,16 @@ import ReaderControls from "../components/ReaderControls";
 import SidebarNav from "../components/SidebarNav";
 import booksIndex from "../../../data/books-index.json";
 
+interface Props {
+    title?: string;
+    description?: string;
+}
+
+const {
+    title = "Lectura Accesible - Biblia, Interlineal y Comentario",
+    description = "Plataforma de estudio bíblico con interlineal Hebreo/Griego, Comentario Bíblico Adventista (CBA) y herramientas de análisis accesibles.",
+} = Astro.props;
+
 const books = booksIndex;
 ---
 
@@ -17,11 +27,8 @@ const books = booksIndex;
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
         <!-- Meta Tags para redes sociales y WhatsApp -->
-        <title>Lectura Accesible - Biblia, Interlineal y Comentario</title>
-        <meta
-            name="description"
-            content="Plataforma de estudio bíblico con interlineal Hebreo/Griego, Comentario Bíblico Adventista (CBA) y herramientas de análisis accesibles."
-        />
+        <title>{title}</title>
+        <meta name="description" content={description} />
 
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website" />
@@ -29,14 +36,8 @@ const books = booksIndex;
             property="og:url"
             content="https://accessible-reading.vercel.app/"
         />
-        <meta
-            property="og:title"
-            content="Lectura Accesible - Biblia e Interlineal"
-        />
-        <meta
-            property="og:description"
-            content="Estudio profundo de las Escrituras con idiomas originales y el Comentario Bíblico Adventista."
-        />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
         <meta
             property="og:image"
             content="https://accessible-reading.vercel.app/og-image.png"
@@ -46,14 +47,8 @@ const books = booksIndex;
 
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image" />
-        <meta
-            property="twitter:title"
-            content="Lectura Accesible - Biblia e Interlineal"
-        />
-        <meta
-            property="twitter:description"
-            content="Estudio profundo de las Escrituras con idiomas originales y el Comentario Bíblico Adventista."
-        />
+        <meta property="twitter:title" content={title} />
+        <meta property="twitter:description" content={description} />
         <meta
             property="twitter:image"
             content="https://accessible-reading.vercel.app/og-image.png"

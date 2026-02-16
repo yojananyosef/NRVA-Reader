@@ -30,7 +30,9 @@ try {
   // En modo estático durante el build, Astro.url.origin puede no ser útil.
   // Intentamos cargar el archivo localmente si es posible, o simplemente dejamos que el componente lo maneje.
   // Pero aquí estamos intentando pasar props iniciales.
-  const response = await fetch(new URL(`/data/plan-content/${plan.id}.json`, Astro.url));
+  const response = await fetch(
+    new URL(`/data/plan-content/${plan.id}.json`, Astro.url),
+  );
   if (response.ok) {
     const data = await response.json();
     if (data[parsedDay]) {
@@ -45,7 +47,7 @@ const readings = dayContent.bible || [];
 const egwReadings = dayContent.egw || [];
 ---
 
-<ReaderLayout>
+<ReaderLayout title={`Día ${parsedDay}: ${plan.title} - Lectura Accesible`}>
   <PlanDay
     client:only="preact"
     planId={plan.id}

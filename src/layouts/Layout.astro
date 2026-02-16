@@ -5,7 +5,7 @@
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/pwa-icon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>{Astro.props.title || "Lectura Accesible"}</title>
 		<script>
 			import { applyThemeToDocument } from "../features/reader/scripts/theme-manager";
 			import { preferences } from "../stores/preferences";
