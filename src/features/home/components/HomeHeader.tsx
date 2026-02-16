@@ -33,26 +33,37 @@ export default function HomeHeader({ progress }: HomeHeaderProps) {
                     {progress.daysVisited.map((visited, index) => {
                         const isToday = index === progress.todayIndex;
                         const isFuture = index > progress.todayIndex;
+                        const isMissed = !visited && !isFuture;
 
                         return (
                             <div key={index} class="flex flex-col items-center gap-1">
-                                <span class="text-xs opacity-60 font-bold">{daysOfWeek[index]}</span>
+                                <span class={`text-xs font-bold ${isToday ? 'text-[var(--color-link)]' : 'opacity-60'}`}>
+                                    {daysOfWeek[index]}
+                                </span>
                                 <div
                                     class={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all
                                         ${isFuture
-                                            ? 'border-transparent bg-theme-text/5 opacity-30'
+                                            ? 'border-dashed border-[var(--surface-muted-border)] bg-transparent opacity-40' // Futuro: borde punteado
                                             : visited
-                                                ? 'bg-[var(--color-link)] border-[var(--color-link)] text-white shadow-sm scale-110'
-                                                : 'border-theme-text/20 bg-transparent opacity-50'
+                                                ? 'bg-[var(--color-link)] border-[var(--color-link)] text-white shadow-sm scale-105' // Completado: lleno
+                                                : 'border-[var(--surface-muted-border)] bg-[var(--surface-muted-bg)] opacity-60 grayscale' // Perdido: gris apagado
                                         }
-                                        ${isToday ? 'ring-2 ring-offset-2 ring-[var(--color-link)] ring-offset-[var(--color-bg)]' : ''}
+                                        ${isToday && !visited ? 'border-[var(--color-link)] border-dashed opacity-100 bg-[var(--color-link)]/5' : ''} // Hoy pendiente
+                                        ${isToday && visited ? 'ring-2 ring-offset-2 ring-[var(--color-link)] ring-offset-[var(--surface-muted-bg)]' : ''} // Hoy completado
                                     `}
+                                    title={
+                                        isFuture ? "Día futuro" :
+                                            visited ? "Completado" :
+                                                isToday ? "Pendiente hoy" : "Día perdido"
+                                    }
                                 >
-                                    {visited && (
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    {visited ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                                         </svg>
-                                    )}
+                                    ) : isMissed ? (
+                                        <div class="w-1.5 h-1.5 rounded-full bg-[var(--color-text)] opacity-20" />
+                                    ) : null}
                                 </div>
                             </div>
                         );
