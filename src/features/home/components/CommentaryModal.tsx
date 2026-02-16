@@ -95,9 +95,9 @@ export default function CommentaryModal({ isOpen, onClose, commentary, loading, 
                             <div class="mt-8 pt-4 border-t border-[var(--surface-muted-border)] flex justify-end">
                                 <a
                                     href={`/commentary?book=${dailyVerse.bookCode}&chapter=${dailyVerse.chapter}#com-${dailyVerse.verse}`}
-                                    class="text-sm font-bold text-[var(--color-link)] hover:underline flex items-center gap-1 bg-[var(--surface-muted-bg)] px-4 py-2 rounded-lg transition-colors hover:bg-[var(--surface-hover-bg)]"
+                                    class="text-sm font-bold text-[var(--color-link)] flex items-center gap-1 bg-[var(--surface-muted-bg)] px-4 py-2 rounded-lg transition-colors hover:bg-[var(--surface-hover-bg)] !no-underline"
                                 >
-                                    Leer comentario completo del capítulo
+                                    Leer completo
                                     <ChevronRight size={14} />
                                 </a>
                             </div>
