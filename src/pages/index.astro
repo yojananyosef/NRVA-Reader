@@ -1,22 +1,8 @@
 ---
 import ReaderLayout from "../features/reader/layouts/ReaderLayout.astro";
-import ReaderContent from "../features/reader/components/ReaderContent.astro";
+import MainRouter from "../features/reader/components/MainRouter";
 ---
 
 <ReaderLayout>
-	<script is:inline>
-		// Redirección a la última posición guardada de la Biblia
-		if (!window.location.search) {
-			try {
-				const stored = localStorage.getItem('bible-last-position');
-				if (stored) {
-					const { lastBook, lastChapter } = JSON.parse(stored);
-					if (lastBook && lastChapter) {
-						window.location.replace(`/?book=${lastBook}&chapter=${lastChapter}`);
-					}
-				}
-			} catch (e) {}
-		}
-	</script>
-	<ReaderContent />
+  <MainRouter client:only="preact" />
 </ReaderLayout>

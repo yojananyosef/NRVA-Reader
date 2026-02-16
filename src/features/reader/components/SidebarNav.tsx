@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { useStore } from "@nanostores/preact";
-import { BookOpen, Menu, ChevronRight, Bookmark, Star, ChevronLeft, Library, X, Languages, BookText, Info } from "lucide-preact";
+import { BookOpen, Menu, ChevronRight, Bookmark, Star, ChevronLeft, Library, X, Languages, BookText, Info, Home } from "lucide-preact";
 import InfoModal from "./InfoModal";
 import { lastBiblePosition, lastCommentaryPosition, lastInterlinearPosition } from "../../../stores/navigation";
 
@@ -25,10 +25,11 @@ export default function SidebarNav({ showTrigger = false, mode = "inline" }: Pro
 
   // Initialize active item based on current URL
   const [activeItem, setActiveItem] = useState<string>(() => {
-    if (typeof window === "undefined") return "bible";
+    if (typeof window === "undefined") return "home";
     const path = window.location.pathname;
     const search = typeof window !== "undefined" ? window.location.search : "";
 
+    if (path === "/" && !search) return "home";
     if (path.includes("/tracker")) return "tracking";
     if (path.includes("/plans")) return "plans";
     if (path.includes("/commentary")) return "commentary";
@@ -44,10 +45,16 @@ export default function SidebarNav({ showTrigger = false, mode = "inline" }: Pro
 
   const mainNav = [
     {
+      id: "home",
+      label: "Inicio",
+      icon: Home,
+      url: "/"
+    },
+    {
       id: "bible",
       label: "Biblia",
       icon: BookOpen,
-      url: $lastBible.lastBook ? `/?book=${$lastBible.lastBook}&chapter=${$lastBible.lastChapter}` : "/"
+      url: $lastBible.lastBook ? `/?book=${$lastBible.lastBook}&chapter=${$lastBible.lastChapter}` : "/?book=gen&chapter=1"
     },
     {
       id: "commentary",
