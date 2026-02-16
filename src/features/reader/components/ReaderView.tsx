@@ -11,7 +11,6 @@ import { preferences } from '../../../stores/preferences';
 // Hooks de aplicación (Application Layer)
 import { useReaderParams } from '../../../application/reader/hooks/useReaderParams';
 import { useBibleData } from '../../../application/reader/hooks/useBibleData';
-import { useBibleMetadata } from '../../../application/reader/hooks/useBibleMetadata';
 import { useBibleSearch } from '../../../application/search/hooks/useBibleSearch';
 import { sanitizeHTML } from '../../../utils/security';
 
@@ -19,7 +18,6 @@ export default function ReaderView() {
     // 1. Gestión de Estado de Aplicación (Hooks)
     const { params, isSearching, setParams } = useReaderParams();
     const { bookData, commentaryData, loading: bibleLoading, error: bibleError } = useBibleData(params.book, isSearching);
-    const { getChapterTitles } = useBibleMetadata(); // Hook de metadatos
     const {
         searchResults,
         multiPassageData,
@@ -119,11 +117,17 @@ export default function ReaderView() {
         const versesList = sortedEntries.map(([num, content]) => {
             let text = "";
             let verseNotes: number[] = [];
+            let header = "";
 
             if (typeof content === "string") {
                 text = content;
             } else if (typeof content === "object" && content !== null) {
                 text = (content as any).texto || "";
+
+                if ((content as any).titulos && Array.isArray((content as any).titulos) && (content as any).titulos.length > 0) {
+                    header = (content as any).titulos[0];
+                }
+
                 const notes = (content as any).notas as string[] | undefined;
                 if (notes && Array.isArray(notes)) {
                     notes.forEach((note) => {
@@ -143,6 +147,7 @@ export default function ReaderView() {
                 text,
                 noteIndices: verseNotes,
                 isHighlighted,
+                header,
             };
         });
 
@@ -280,21 +285,22 @@ export default function ReaderView() {
                                 {!isCollapsed && (
                                     <div class="verses space-y-4 reader-text animate-in slide-in-from-top-2 duration-300">
                                         {(() => {
-                                            const chapterTitles = getChapterTitles(result.book, result.chapter);
                                             return versesToRender.map(([num, content]) => {
                                                 const verseText = typeof content === "string" ? content : (content as any).texto || "";
                                                 const verseId = `${result.book}-${result.chapter}-${num}`;
                                                 const isGlobalHighlighted = $highlights[verseId];
                                                 const verseNum = parseInt(num);
 
-                                                // Find if there's a title for this verse
-                                                const verseTitle = chapterTitles.find((t: any) => t.verse === verseNum);
+                                                let verseTitle = "";
+                                                if (typeof content === "object" && content !== null && (content as any).titulos && Array.isArray((content as any).titulos) && (content as any).titulos.length > 0) {
+                                                    verseTitle = (content as any).titulos[0];
+                                                }
 
                                                 return (
                                                     <div key={num} class="space-y-4">
                                                         {verseTitle && (
                                                             <h3 class="text-lg font-bold text-[var(--color-text)] opacity-80 mt-8 mb-4 border-l-4 border-[var(--color-link)] pl-4">
-                                                                {verseTitle.text}
+                                                                {verseTitle}
                                                             </h3>
                                                         )}
                                                         <p
@@ -417,18 +423,16 @@ export default function ReaderView() {
 
             <div class="verses space-y-4 reader-text">
                 {(() => {
-                    const chapterTitles = getChapterTitles(bookKey, chapterKey);
                     return filteredVerses.map((verse) => {
                         const verseId = `${bookKey}-${chapterKey}-${verse.number}`;
                         const isGlobalHighlighted = $highlights[verseId];
                         const verseNum = parseInt(verse.number);
-                        const verseTitle = chapterTitles.find((t: any) => t.verse === verseNum);
 
                         return (
                             <div key={verse.number} class="space-y-4">
-                                {verseTitle && (
+                                {(verse as any).header && (
                                     <h3 class="text-lg font-bold text-[var(--color-text)] opacity-80 mt-8 mb-4 border-l-4 border-[var(--color-link)] pl-4">
-                                        {verseTitle.text}
+                                        {(verse as any).header}
                                     </h3>
                                 )}
                                 <p

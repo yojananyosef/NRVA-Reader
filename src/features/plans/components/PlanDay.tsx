@@ -8,7 +8,7 @@ import { useStore } from "@nanostores/preact";
 
 type Reading = { label: string; book: string; chapter: number; verses?: string };
 type EGWReading = { label: string; link?: string; content?: string; chapterId?: number };
-type Verse = { number: string; text: string; isHighlighted?: boolean };
+type Verse = { number: string; text: string; isHighlighted?: boolean; header?: string };
 
 type Props = {
   planId: string;
@@ -240,15 +240,20 @@ export default function PlanDay({
       const parsedVerses: Verse[] = Object.entries(rawVerses)
         .map(([num, content]) => {
           let text = "";
+          let header = "";
+
           if (typeof content === "string") {
             text = content;
           } else if (typeof content === "object" && content !== null) {
             text = (content as any).texto || "";
+            if ((content as any).titulos && Array.isArray((content as any).titulos)) {
+              header = (content as any).titulos[0];
+            }
           }
           const verseNum = parseInt(num);
           const isHighlighted = requiredVerses.length > 0 && requiredVerses.includes(verseNum);
 
-          return { number: num, text, isHighlighted };
+          return { number: num, text, isHighlighted, header };
         })
         .sort((a, b) => parseInt(a.number) - parseInt(b.number));
 
@@ -568,21 +573,25 @@ export default function PlanDay({
                   {chapterVerses
                     .filter(v => viewMode === "full" || v.isHighlighted)
                     .map((v) => (
-                      <div
-                        key={v.number}
-                        className={`flex gap-3 p-2 -mx-2 rounded transition-all ${v.isHighlighted ? "is-plan-highlighted" : ""}`}
-                      >
-                        <sup className={`text-xs font-bold mt-2 select-none min-w-[1.5rem] text-right ${v.isHighlighted ? "text-[var(--color-link)] opacity-100" : "opacity-40"}`}>
-                          {v.number}
-                        </sup>
-                        <p
-                          className={`flex-1 m-0 ${v.isHighlighted ? "font-medium" : "opacity-80"}`}
-                          dangerouslySetInnerHTML={{
-                            __html: $preferences.showRedLetters && openReading
-                              ? formatRedLetters(v.text, openReading.book, openReading.chapter, parseInt(v.number))
-                              : v.text
-                          }}
-                        />
+                      <div key={v.number}>
+                        {v.header && (
+                          <h4 className="text-lg font-bold mt-6 mb-3 text-[var(--color-link)]">{v.header}</h4>
+                        )}
+                        <div
+                          className={`flex gap-3 p-2 -mx-2 rounded transition-all ${v.isHighlighted ? "is-plan-highlighted" : ""}`}
+                        >
+                          <sup className={`text-xs font-bold mt-2 select-none min-w-[1.5rem] text-right ${v.isHighlighted ? "text-[var(--color-link)] opacity-100" : "opacity-40"}`}>
+                            {v.number}
+                          </sup>
+                          <p
+                            className={`flex-1 m-0 ${v.isHighlighted ? "font-medium" : "opacity-80"}`}
+                            dangerouslySetInnerHTML={{
+                              __html: $preferences.showRedLetters && openReading
+                                ? formatRedLetters(v.text, openReading.book, openReading.chapter, parseInt(v.number))
+                                : v.text
+                            }}
+                          />
+                        </div>
                       </div>
                     ))}
                 </div>

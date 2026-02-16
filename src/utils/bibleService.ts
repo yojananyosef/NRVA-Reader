@@ -20,6 +20,7 @@ interface FirebaseBook {
 interface LocalVerse {
     texto: string;
     notas?: string[];
+    titulos?: string[];
 }
 
 interface LocalChapter {
@@ -80,7 +81,8 @@ function transformFirebaseToLocal(data: FirebaseBook): LocalBook {
 
                     localChapter[verseNum] = {
                         texto: verse.texto,
-                        notas: verse.notas
+                        notas: verse.notas,
+                        titulos: verse.titulos
                     };
                 });
             }
