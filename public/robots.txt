@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://accessible-reading.vercel.app/sitemap.xml
+Sitemap: https://accessible-reading.vercel.app/sitemap-index.xml

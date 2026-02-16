@@ -4,6 +4,8 @@ import "../../../styles/dyslexia-theme.css";
 import ReaderControls from "../components/ReaderControls";
 import SidebarNav from "../components/SidebarNav";
 import booksIndex from "../../../data/books-index.json";
+import "@fontsource/noto-sans-hebrew";
+import "@fontsource/noto-serif-hebrew";
 
 interface Props {
     title?: string;
@@ -25,6 +27,8 @@ const books = booksIndex;
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2D3142" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="canonical" href={Astro.url} />
+        <link rel="sitemap" href="/sitemap-index.xml" />
 
         <!-- Meta Tags para redes sociales y WhatsApp -->
         <title>{title}</title>

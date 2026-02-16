@@ -1,10 +1,12 @@
 import { defineConfig } from 'astro/config';
 import preact from '@astrojs/preact';
+import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+  site: 'https://accessible-reading.vercel.app',
   output: 'static',
-  integrations: [preact()],
+  integrations: [preact(), sitemap()],
   image: {
     service: {
       entrypoint: 'astro/assets/services/noop'
