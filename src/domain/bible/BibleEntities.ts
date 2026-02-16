@@ -9,6 +9,7 @@
 export interface BibleVerse {
     text: string;
     notes?: string[];
+    titulos?: string[];
 }
 
 export interface BibleChapter {

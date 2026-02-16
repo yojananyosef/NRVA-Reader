@@ -1,13 +1,10 @@
 // src/application/reader/hooks/useBibleData.ts
 import { useState, useEffect } from 'preact/hooks';
-import { fetchBibleBook } from '../../../utils/bibleService';
+import { fetchBibleBook, type LocalBook } from '../../../utils/bibleService';
 import { fetchWithCache } from '../../../utils/fetchWithCache';
-// TODO: Importar tipos estrictos cuando movamos LocalBook a domain
-// Por ahora usamos any para mantener compatibilidad temporal, pero esto debe refactorizarse
-// a tipos de dominio (BibleBook) pronto.
 
 interface UseBibleDataReturn {
-    bookData: any | null; // Debería ser BibleBook
+    bookData: LocalBook | null;
     commentaryData: any | null;
     loading: boolean;
     error: Error | null;
@@ -20,7 +17,7 @@ interface UseBibleDataReturn {
  * Abstrae la fuente de datos (Firebase/Cache) y el manejo de errores.
  */
 export function useBibleData(bookCode: string, isSearching: boolean): UseBibleDataReturn {
-    const [bookData, setBookData] = useState<any | null>(null);
+    const [bookData, setBookData] = useState<LocalBook | null>(null);
     const [commentaryData, setCommentaryData] = useState<any | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | null>(null);

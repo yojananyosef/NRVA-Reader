@@ -1,7 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { ChevronLeft, X, Check, Eye, EyeOff, Info } from "lucide-preact";
 import { fetchWithCache } from "../../../utils/fetchWithCache";
-import { fetchBibleBook } from "../../../utils/bibleService";
+import { fetchBibleBook, type LocalVerse } from "../../../utils/bibleService";
 import { formatRedLetters } from "../../../utils/redLetterUtils";
 import { preferences } from "../../../stores/preferences";
 import { useStore } from "@nanostores/preact";
@@ -245,9 +245,10 @@ export default function PlanDay({
           if (typeof content === "string") {
             text = content;
           } else if (typeof content === "object" && content !== null) {
-            text = (content as any).texto || "";
-            if ((content as any).titulos && Array.isArray((content as any).titulos)) {
-              header = (content as any).titulos[0];
+            const verse = content as LocalVerse;
+            text = verse.texto || "";
+            if (verse.titulos && Array.isArray(verse.titulos)) {
+              header = verse.titulos[0];
             }
           }
           const verseNum = parseInt(num);

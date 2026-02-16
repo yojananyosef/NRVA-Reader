@@ -1,5 +1,6 @@
 
 import { fetchWithCache } from './fetchWithCache';
+import type { BibleVerse } from '../domain/bible/BibleEntities';
 
 // Tipos para la estructura de Firebase
 interface FirebaseVerse {
@@ -17,17 +18,17 @@ interface FirebaseBook {
 }
 
 // Tipos para la estructura local (usada por la app)
-interface LocalVerse {
-    texto: string;
-    notas?: string[];
-    titulos?: string[];
+// Alineamos con el dominio, pero mantenemos compatibilidad con la estructura actual de datos
+export interface LocalVerse extends BibleVerse {
+    texto: string; // Alias para text
+    notas?: string[]; // Alias para notes
 }
 
-interface LocalChapter {
+export interface LocalChapter {
     [verse: string]: LocalVerse;
 }
 
-interface LocalBook {
+export interface LocalBook {
     nombre: string;
     categoria: string;
     capitulo: {
@@ -81,7 +82,9 @@ function transformFirebaseToLocal(data: FirebaseBook): LocalBook {
 
                     localChapter[verseNum] = {
                         texto: verse.texto,
+                        text: verse.texto, // Mapping for domain compatibility
                         notas: verse.notas,
+                        notes: verse.notas, // Mapping for domain compatibility
                         titulos: verse.titulos
                     };
                 });

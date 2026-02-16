@@ -13,6 +13,7 @@ import { useReaderParams } from '../../../application/reader/hooks/useReaderPara
 import { useBibleData } from '../../../application/reader/hooks/useBibleData';
 import { useBibleSearch } from '../../../application/search/hooks/useBibleSearch';
 import { sanitizeHTML } from '../../../utils/security';
+import type { LocalVerse } from '../../../utils/bibleService';
 
 export default function ReaderView() {
     // 1. Gestión de Estado de Aplicación (Hooks)
@@ -122,13 +123,14 @@ export default function ReaderView() {
             if (typeof content === "string") {
                 text = content;
             } else if (typeof content === "object" && content !== null) {
-                text = (content as any).texto || "";
+                const verse = content as LocalVerse;
+                text = verse.texto || "";
 
-                if ((content as any).titulos && Array.isArray((content as any).titulos) && (content as any).titulos.length > 0) {
-                    header = (content as any).titulos[0];
+                if (verse.titulos && Array.isArray(verse.titulos) && verse.titulos.length > 0) {
+                    header = verse.titulos[0];
                 }
 
-                const notes = (content as any).notas as string[] | undefined;
+                const notes = verse.notas;
                 if (notes && Array.isArray(notes)) {
                     notes.forEach((note) => {
                         if (note && note.trim() !== "") {
@@ -286,14 +288,17 @@ export default function ReaderView() {
                                     <div class="verses space-y-4 reader-text animate-in slide-in-from-top-2 duration-300">
                                         {(() => {
                                             return versesToRender.map(([num, content]) => {
-                                                const verseText = typeof content === "string" ? content : (content as any).texto || "";
+                                                const verseText = typeof content === "string" ? content : (content as LocalVerse).texto || "";
                                                 const verseId = `${result.book}-${result.chapter}-${num}`;
                                                 const isGlobalHighlighted = $highlights[verseId];
                                                 const verseNum = parseInt(num);
 
                                                 let verseTitle = "";
-                                                if (typeof content === "object" && content !== null && (content as any).titulos && Array.isArray((content as any).titulos) && (content as any).titulos.length > 0) {
-                                                    verseTitle = (content as any).titulos[0];
+                                                if (typeof content === "object" && content !== null) {
+                                                    const verse = content as LocalVerse;
+                                                    if (verse.titulos && Array.isArray(verse.titulos) && verse.titulos.length > 0) {
+                                                        verseTitle = verse.titulos[0];
+                                                    }
                                                 }
 
                                                 return (
@@ -430,9 +435,9 @@ export default function ReaderView() {
 
                         return (
                             <div key={verse.number} class="space-y-4">
-                                {(verse as any).header && (
+                                {verse.header && (
                                     <h3 class="text-lg font-bold text-[var(--color-text)] opacity-80 mt-8 mb-4 border-l-4 border-[var(--color-link)] pl-4">
-                                        {(verse as any).header}
+                                        {verse.header}
                                     </h3>
                                 )}
                                 <p
