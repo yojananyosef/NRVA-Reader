@@ -225,7 +225,8 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                             setIsOpen(false);
                             window.dispatchEvent(new CustomEvent('toggle-sidebar'));
                         }}
-                        className="p-2 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors flex md:hidden items-center gap-2 cursor-pointer bg-transparent border-none"
+                        className="h-11 w-11 p-0 shrink-0 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors flex md:hidden items-center justify-center cursor-pointer bg-transparent border-none"
+                        style={{ padding: 0, width: '44px', height: '44px', minWidth: '44px' }}
                         aria-label="Alternar menú lateral"
                         type="button"
                     >
@@ -242,7 +243,8 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                             e.preventDefault();
                             stop();
                         }}
-                        className={`p-2 rounded-md transition-colors cursor-pointer flex items-center justify-center min-w-[40px] border-none ${isPlaying ? 'bg-[var(--surface-active-bg)] text-[var(--color-link)]' : 'hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] bg-transparent'}`}
+                        className={`h-11 w-11 p-0 shrink-0 rounded-md transition-colors cursor-pointer flex items-center justify-center border-none ${isPlaying ? 'bg-[var(--surface-active-bg)] text-[var(--color-link)]' : 'hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] bg-transparent'}`}
+                        style={{ padding: 0, width: '44px', height: '44px', minWidth: '44px' }}
                         aria-label={isPlaying ? (isPaused ? "Reanudar lectura" : "Pausar lectura") : "Leer en voz alta"}
                         type="button"
                     >
@@ -260,7 +262,8 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                             setView('books');
                             setIsOpen(true);
                         }}
-                        className="p-2 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors cursor-pointer bg-transparent border-none"
+                        className="h-11 w-11 p-0 shrink-0 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors flex items-center justify-center cursor-pointer bg-transparent border-none"
+                        style={{ padding: 0, width: '44px', height: '44px', minWidth: '44px' }}
                         aria-label="Abrir navegación de libros"
                         type="button"
                     >
@@ -272,7 +275,8 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                             setView('settings');
                             setIsOpen(true);
                         }}
-                        className="p-2 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors cursor-pointer bg-transparent border-none"
+                        className="h-11 w-11 p-0 shrink-0 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors flex items-center justify-center cursor-pointer bg-transparent border-none"
+                        style={{ padding: 0, width: '44px', height: '44px', minWidth: '44px' }}
                         aria-label="Abrir configuración"
                         type="button"
                     >
