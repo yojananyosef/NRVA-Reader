@@ -5,7 +5,7 @@ import { Settings, Type, AlignJustify, MoveHorizontal, Palette, RotateCcw, X, Su
 import ReaderRuler from './ReaderRuler';
 import { useTTS } from '../../../application/reader/hooks/useTTS';
 import { parseBibleQuery, getBookSuggestions } from '../../../utils/bibleParser';
-import { lastBiblePosition, lastCommentaryPosition } from '../../../stores/navigation';
+import { lastBiblePosition } from '../../../stores/navigation';
 
 interface Book {
     code: string;
@@ -124,10 +124,10 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
         if (!searchQuery.trim()) return;
 
         const results = parseBibleQuery(searchQuery);
-        if (results.length > 0) {
-            let url = '';
-            let detail = {};
+        let url = '';
+        let detail = {};
 
+        if (results.length > 0) {
             if (results.length === 1 && !results[0].verses) {
                 // Navegación normal para un solo capítulo sin versículos específicos
                 url = `/?book=${results[0].book}&chapter=${results[0].chapter}`;
@@ -142,20 +142,25 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                 url = `/?search=${searchParam}`;
                 detail = { search: searchQuery };
             }
-
-            // Si estamos en la raíz (Biblia), navegación SPA
-            // Usamos window.location.pathname === '/' para asegurar que estamos en la vista de Biblia
-            if (window.location.pathname === '/') {
-                window.history.pushState({}, '', url);
-                window.dispatchEvent(new CustomEvent('app:navigate', { detail }));
-            } else {
-                // Si estamos en otra vista (ej. Comentario, Planes), forzar navegación a la Biblia
-                // Esto previene que el Comentario capture el evento app:navigate
-                window.location.href = url;
-            }
-
-            setIsOpen(false);
+        } else {
+            // Búsqueda de texto libre
+            const searchParam = encodeURIComponent(searchQuery);
+            url = `/?search=${searchParam}`;
+            detail = { search: searchQuery };
         }
+
+        // Si estamos en la raíz (Biblia), navegación SPA
+        // Usamos window.location.pathname === '/' para asegurar que estamos en la vista de Biblia
+        if (window.location.pathname === '/') {
+            window.history.pushState({}, '', url);
+            window.dispatchEvent(new CustomEvent('app:navigate', { detail }));
+        } else {
+            // Si estamos en otra vista (ej. Comentario, Planes), forzar navegación a la Biblia
+            // Esto previene que el Comentario capture el evento app:navigate
+            window.location.href = url;
+        }
+
+        setIsOpen(false);
     };
 
     const toggleSection = (section: string) => {
@@ -181,26 +186,21 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
 
     const navigateToChapter = (chapter: number) => {
         if (selectedBook) {
-            const isCommentary = window.location.pathname.includes('/commentary');
-            const baseUrl = isCommentary ? '/commentary' : '/';
+            // Siempre navegar a la vista de Biblia, independientemente de dónde estemos
+            const baseUrl = '/';
             const url = `${baseUrl}?book=${selectedBook.code}&chapter=${chapter}`;
 
-            // Actualizar persistencia
-            if (isCommentary) {
-                lastCommentaryPosition.set({ lastBook: selectedBook.code, lastChapter: chapter.toString() });
-            } else {
-                lastBiblePosition.set({ lastBook: selectedBook.code, lastChapter: chapter.toString() });
-            }
+            // Actualizar persistencia de la Biblia
+            lastBiblePosition.set({ lastBook: selectedBook.code, lastChapter: chapter.toString() });
 
-            // Si ya estamos en la misma página (Biblia o Comentario), navegar sin recargar
-            const currentPath = window.location.pathname;
-            if (currentPath === baseUrl || (currentPath === '/' && baseUrl === '/')) {
+            // Si ya estamos en la vista de Biblia, navegación SPA
+            if (window.location.pathname === '/') {
                 window.history.pushState({}, '', url);
                 window.dispatchEvent(new CustomEvent('app:navigate', {
                     detail: { url, book: selectedBook.code, chapter: String(chapter) }
                 }));
             } else {
-                // Si cambiamos entre Biblia y Comentario, recarga normal (o dejar que View Transitions actúe)
+                // Si estamos en otra vista (ej. Comentario, Planes), forzar navegación a la Biblia
                 window.location.href = url;
             }
             setIsOpen(false);

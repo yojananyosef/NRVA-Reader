@@ -6,7 +6,7 @@ export default function MainRouter() {
     const [view, setView] = useState<'home' | 'reader'>(() => {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
-            return params.has('book') ? 'reader' : 'home';
+            return (params.has('book') || params.has('search')) ? 'reader' : 'home';
         }
         return 'home';
     });
@@ -17,12 +17,13 @@ export default function MainRouter() {
         const checkRoute = () => {
             const params = new URLSearchParams(window.location.search);
             const hasBook = params.has('book');
-            const newView = hasBook ? 'reader' : 'home';
+            const hasSearch = params.has('search');
+            const newView = (hasBook || hasSearch) ? 'reader' : 'home';
 
             setView(newView);
             setSearchString(window.location.search);
 
-            if (!hasBook) {
+            if (!hasBook && !hasSearch) {
                 document.title = "Inicio - Lectura Accesible";
             }
         };
@@ -33,11 +34,13 @@ export default function MainRouter() {
         window.addEventListener('popstate', checkRoute);
         document.addEventListener('astro:page-load', checkRoute);
         document.addEventListener('astro:after-swap', checkRoute);
+        window.addEventListener('app:navigate', checkRoute);
 
         return () => {
             window.removeEventListener('popstate', checkRoute);
             document.removeEventListener('astro:page-load', checkRoute);
             document.removeEventListener('astro:after-swap', checkRoute);
+            window.removeEventListener('app:navigate', checkRoute);
         };
     }, []);
 
