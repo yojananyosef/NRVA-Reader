@@ -6,6 +6,12 @@
 		<link rel="icon" type="image/svg+xml" href="/pwa-icon.svg" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{Astro.props.title || "Lectura Accesible"}</title>
+		<script is:inline>
+			// Disable right-click context menu globally
+			document.addEventListener("contextmenu", (e) => {
+				e.preventDefault();
+			});
+		</script>
 		<script>
 			import { applyThemeToDocument } from "../features/reader/scripts/theme-manager";
 			import { preferences } from "../stores/preferences";
@@ -14,7 +20,7 @@
 			applyThemeToDocument(preferences.get());
 		</script>
 	</head>
-	<body>
+	<body oncontextmenu="return false;">
 		<slot />
 	</body>
 </html>

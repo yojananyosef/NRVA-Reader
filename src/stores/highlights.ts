@@ -1,7 +1,7 @@
 import { map } from 'nanostores';
 
 interface HighlightState {
-    [key: string]: boolean;
+    [key: string]: string | boolean;
 }
 
 export const highlights = map<HighlightState>({});
@@ -26,12 +26,26 @@ highlights.subscribe((value) => {
     }
 });
 
-export function toggleHighlight(verseId: string) {
+export function toggleHighlight(verseId: string, color: string = 'yellow') {
+    const current = highlights.get();
+    const currentValue = current[verseId];
+
+    // Check if it's already highlighted with the same color
+    // Legacy 'true' is treated as 'yellow'
+    const isSameColor = currentValue === color || (currentValue === true && color === 'yellow');
+
+    if (isSameColor) {
+        const { [verseId]: _, ...rest } = current;
+        highlights.set(rest);
+    } else {
+        highlights.setKey(verseId, color);
+    }
+}
+
+export function removeHighlight(verseId: string) {
     const current = highlights.get();
     if (current[verseId]) {
         const { [verseId]: _, ...rest } = current;
         highlights.set(rest);
-    } else {
-        highlights.setKey(verseId, true);
     }
 }

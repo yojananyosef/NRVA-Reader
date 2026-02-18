@@ -148,8 +148,13 @@ const books = booksIndex;
             });
         </script>
     </head>
-    <body class="overflow-x-hidden">
+    <body class="overflow-x-hidden" oncontextmenu="return false;">
         <script is:inline>
+            // Disable right-click context menu globally
+            document.addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+            });
+
             function applyInitialPrefs() {
                 try {
                     var defaultPrefs = {

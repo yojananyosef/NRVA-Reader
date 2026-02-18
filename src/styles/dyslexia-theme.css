@@ -49,8 +49,8 @@
     --color-link: var(--color-primary);
     --color-primary-hover: color-mix(in srgb, var(--color-link), black 15%);
     --color-primary-active: color-mix(in srgb, var(--color-link), black 30%);
-    --surface-muted-bg: color-mix(in srgb, var(--color-text), transparent 95%);
-    --surface-muted-border: color-mix(in srgb, var(--color-text), transparent 90%);
+    --surface-muted-bg: color-mix(in srgb, var(--color-text) 5%, var(--color-bg));
+    --surface-muted-border: color-mix(in srgb, var(--color-text) 10%, var(--color-bg));
     --surface-hover-bg: color-mix(in srgb, var(--color-text), transparent 90%);
     --surface-active-bg: color-mix(in srgb, var(--color-text), transparent 85%);
     --font-family: 'Arial', 'Verdana', 'Calibri', sans-serif;
@@ -383,8 +383,8 @@ select {
     --color-primary: #8c5e2a;
     --color-primary-hover: color-mix(in srgb, var(--color-link), black 10%);
     --color-primary-active: color-mix(in srgb, var(--color-link), black 20%);
-    --surface-muted-bg: color-mix(in srgb, var(--color-text), transparent 95%);
-    --surface-muted-border: color-mix(in srgb, var(--color-text), transparent 90%);
+    --surface-muted-bg: color-mix(in srgb, var(--color-text) 5%, var(--color-bg));
+    --surface-muted-border: color-mix(in srgb, var(--color-text) 10%, var(--color-bg));
     --surface-hover-bg: color-mix(in srgb, var(--color-text), transparent 92%);
     --surface-active-bg: color-mix(in srgb, var(--color-text), transparent 88%);
 }
@@ -475,16 +475,31 @@ p {
 :root {
     --color-highlight: #fff9c4;
     /* Light Yellow default */
+    --highlight-yellow: #fff9c4;
+    --highlight-green: #dcedc8;
+    --highlight-blue: #bbdefb;
+    --highlight-pink: #f8bbd0;
+    --highlight-purple: #e1bee7;
 }
 
 body[data-theme='dark'] {
     --color-highlight: #4a4a3b;
     /* Dark olive for dark mode */
+    --highlight-yellow: #4a4a3b;
+    --highlight-green: #2e3b2e;
+    --highlight-blue: #2e3b4a;
+    --highlight-pink: #4a2e3b;
+    --highlight-purple: #3b2e4a;
 }
 
 body[data-theme='sepia'] {
     --color-highlight: #e6dcb8;
     /* Darker sepia for highlight */
+    --highlight-yellow: #e6dcb8;
+    --highlight-green: #d8e6b8;
+    --highlight-blue: #b8d8e6;
+    --highlight-pink: #e6b8d8;
+    --highlight-purple: #d8b8e6;
 }
 
 /* TTS Active Word/Block */
