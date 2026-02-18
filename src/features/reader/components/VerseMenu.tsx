@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'preact/hooks';
-import { Copy, Check, Trash2 } from 'lucide-preact';
+import { useEffect, useRef, useState } from 'preact/hooks';
+import { Copy, Check } from 'lucide-preact';
 
 interface VerseMenuProps {
     isOpen: boolean;
@@ -25,10 +25,17 @@ export default function VerseMenu({
     onClose,
     onHighlight,
     onCopy,
-    onRemoveHighlight,
     currentHighlight
 }: VerseMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -54,8 +61,16 @@ export default function VerseMenu({
     return (
         <div
             ref={menuRef}
-            className="fixed z-50 bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] rounded-lg shadow-xl p-2 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200"
-            style={{
+            className={`fixed z-50 bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] rounded-lg shadow-xl p-2 flex items-center gap-2 animate-in fade-in duration-200 
+                ${isMobile ? 'slide-in-from-bottom-2' : 'zoom-in-95'}
+            `}
+            style={isMobile ? {
+                bottom: '24px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                maxWidth: '95vw',
+                width: 'auto'
+            } : {
                 top: position.top,
                 left: position.left,
                 transform: 'translate(-50%, -100%) translateY(-10px)',
@@ -73,28 +88,15 @@ export default function VerseMenu({
                                 e.stopPropagation();
                                 onHighlight(color.name);
                             }}
-                            className={`w-6 h-6 rounded-full border border-black/10 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--color-link)] ${isSelected ? 'ring-2 ring-offset-1 ring-[var(--color-link)]' : ''}`}
+                            className={`w-8 h-8 md:w-6 md:h-6 rounded-full border border-black/10 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--color-link)] ${isSelected ? 'ring-2 ring-offset-1 ring-[var(--color-link)]' : ''}`}
                             style={{ backgroundColor: color.value }}
                             title={`Resaltar ${color.name}`}
                             aria-label={`Resaltar color ${color.name}`}
                         >
-                            {isSelected && <Check size={14} className="mx-auto text-black/50" />}
+                            {isSelected && <Check size={isMobile ? 18 : 14} className="mx-auto text-black/50" />}
                         </button>
                     );
                 })}
-                {(currentHighlight !== undefined && currentHighlight !== false) && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onRemoveHighlight();
-                        }}
-                        className="p-1.5 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-text)] transition-colors ml-1"
-                        title="Quitar resaltado"
-                        aria-label="Quitar resaltado"
-                    >
-                        <Trash2 size={16} />
-                    </button>
-                )}
             </div>
 
             <button
@@ -103,9 +105,10 @@ export default function VerseMenu({
                     onCopy();
                 }}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-text)] text-sm font-medium transition-colors"
+                title="Copiar versículo"
             >
-                <Copy size={16} />
-                Copiar
+                <Copy size={isMobile ? 20 : 16} />
+                <span className={isMobile ? "sr-only" : ""}>Copiar</span>
             </button>
         </div>
     );
