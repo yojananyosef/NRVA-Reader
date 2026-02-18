@@ -28,7 +28,7 @@ export default function VerseMenu({
     currentHighlight
 }: VerseMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
-    const [isMobile, setIsMobile] = useState(false);
+    const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -61,19 +61,13 @@ export default function VerseMenu({
     return (
         <div
             ref={menuRef}
-            className={`fixed z-50 bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] rounded-lg shadow-xl p-2 flex items-center gap-2 animate-in fade-in duration-200 
-                ${isMobile ? 'slide-in-from-bottom-2' : 'zoom-in-95'}
-            `}
-            style={isMobile ? {
-                bottom: '24px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                maxWidth: '95vw',
-                width: 'auto'
-            } : {
+            className={`fixed z-50 bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] rounded-lg shadow-xl p-2 flex items-center gap-2 animate-in fade-in duration-300`}
+            style={{
                 top: position.top,
-                left: position.left,
-                transform: 'translate(-50%, -100%) translateY(-10px)',
+                left: isMobile ? '50%' : position.left,
+                transform: 'translate(-50%, 10px)',
+                width: 'max-content',
+                maxWidth: '95vw'
             }}
             role="dialog"
             aria-label="Opciones de versículo"
