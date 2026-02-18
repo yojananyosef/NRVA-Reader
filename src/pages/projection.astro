@@ -1,0 +1,36 @@
+---
+import ProjectionView from "../features/projection/components/ProjectionView";
+import "@fontsource/noto-sans-hebrew";
+import "@fontsource/noto-serif-hebrew";
+---
+
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href="/pwa-icon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Proyección de Versículos</title>
+        <style is:inline>
+            /* Reset básico */
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                background-color: black;
+                color: white;
+                overflow: hidden;
+            }
+
+            /* Ocultar barra de scroll */
+            ::-webkit-scrollbar {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <ProjectionView client:only="preact" />
+    </body>
+</html>
