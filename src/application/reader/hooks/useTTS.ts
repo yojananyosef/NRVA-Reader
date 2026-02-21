@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
 import { preferences } from '../../../stores/preferences';
 
 export function useTTS() {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
+    const isPausedRef = useRef(false); // Ref to track paused state in closures
     const [isLoading, setIsLoading] = useState(false);
     const synth = useRef<SpeechSynthesis | null>(null);
     const utterance = useRef<SpeechSynthesisUtterance | null>(null);
@@ -13,9 +14,86 @@ export function useTTS() {
     const isStoppingRef = useRef(false);
     const utterancesRef = useRef<SpeechSynthesisUtterance[]>([]); // Prevent GC
 
+    // Voice Selection State
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const [selectedVoice, setSelectedVoiceState] = useState<SpeechSynthesisVoice | null>(null);
+    const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+
+    // Update preference when voice changes
+    const setSelectedVoice = useCallback((voice: SpeechSynthesisVoice | null) => {
+        setSelectedVoiceState(voice);
+        selectedVoiceRef.current = voice;
+        if (voice) {
+            const current = preferences.get();
+            preferences.set({ ...current, selectedVoiceURI: voice.voiceURI });
+
+            // If playing or paused, update immediately
+            if (synth.current && (synth.current.speaking || synth.current.pending)) {
+                // If paused, we still want to cancel to swap voice.
+                // The 'canceled' error handler in play() will restart the segment with the new voice,
+                // and isPausedRef will ensure it starts in paused state.
+                synth.current.cancel();
+            }
+        }
+    }, []);
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             synth.current = window.speechSynthesis;
+
+            // Load and filter voices
+            const loadVoices = () => {
+                if (!synth.current) return;
+
+                // Get all voices
+                const allVoices = synth.current.getVoices();
+
+                // Filter for Spanish voices and remove duplicates more aggressively
+                const uniqueVoicesMap = new Map();
+
+                allVoices.forEach(voice => {
+                    if (voice.lang && voice.lang.toLowerCase().includes('es')) {
+                        // Use name + lang as key to distinguish variants (e.g. es-ES vs es-MX)
+                        const key = `${voice.name}-${voice.lang}`;
+                        if (!uniqueVoicesMap.has(key)) {
+                            uniqueVoicesMap.set(key, voice);
+                        }
+                    }
+                });
+
+                const spanishVoices = Array.from(uniqueVoicesMap.values());
+
+                // Debug log
+                console.log(`TTS: Found ${allVoices.length} voices total, ${spanishVoices.length} Spanish voices.`);
+
+                setVoices(spanishVoices);
+
+                // Auto-select based on preference or default
+                const prefs = preferences.get();
+                if (prefs.selectedVoiceURI) {
+                    const savedVoice = spanishVoices.find(v => v.voiceURI === prefs.selectedVoiceURI);
+                    if (savedVoice) {
+                        setSelectedVoiceState(savedVoice);
+                        selectedVoiceRef.current = savedVoice;
+                        return;
+                    }
+                }
+
+                // Default to first available if no preference match
+                if (spanishVoices.length > 0 && !selectedVoiceRef.current) {
+                    const defaultVoice = spanishVoices[0];
+                    setSelectedVoiceState(defaultVoice);
+                    selectedVoiceRef.current = defaultVoice;
+                }
+            };
+
+            // Initial load
+            loadVoices();
+
+            // Handle async voice loading
+            if (synth.current.onvoiceschanged !== undefined) {
+                synth.current.onvoiceschanged = loadVoices;
+            }
 
             // Wake up speech engine on mobile/Safari
             const wakeUp = () => {
@@ -99,6 +177,7 @@ export function useTTS() {
             synth.current.cancel();
             setIsPlaying(false);
             setIsPaused(false);
+            isPausedRef.current = false;
             setIsLoading(false);
             currentIndexRef.current = 0;
             utterancesRef.current = []; // Clear GC protection
@@ -116,6 +195,7 @@ export function useTTS() {
         if (synth.current && isPlaying && !isPaused) {
             synth.current.pause();
             setIsPaused(true);
+            isPausedRef.current = true;
             // On some browsers, pause/resume is buggy. 
             // We'll store the state to handle it in resume()
         }
@@ -134,7 +214,35 @@ export function useTTS() {
                 }
             }
             setIsPaused(false);
+            isPausedRef.current = false;
         }
+    };
+
+    // New function for testing/reading specific text
+    const speakText = (text: string) => {
+        if (!synth.current) return;
+
+        // Prevent errors if already speaking
+        if (synth.current.speaking) {
+            synth.current.cancel();
+        }
+
+        const u = new SpeechSynthesisUtterance(text);
+        if (selectedVoice) {
+            u.voice = selectedVoice;
+        }
+        u.rate = rate;
+        u.lang = selectedVoice ? selectedVoice.lang : 'es-ES';
+
+        u.onstart = () => setIsPlaying(true);
+        u.onend = () => setIsPlaying(false);
+        u.onerror = (e) => {
+            console.error("TTS Error:", e);
+            setIsPlaying(false);
+        };
+
+        utterance.current = u;
+        synth.current.speak(u);
     };
 
     const play = (textBlocksSelector = '.reader-content p, .reader-content h1', onComplete?: () => void) => {
@@ -229,8 +337,15 @@ export function useTTS() {
                 }
 
                 const u = new SpeechSynthesisUtterance(text);
+
+                // Apply selected voice
+                const currentVoice = selectedVoiceRef.current;
+                if (currentVoice) {
+                    u.voice = currentVoice;
+                }
+
                 u.rate = rate;
-                u.lang = 'es-ES';
+                u.lang = currentVoice ? currentVoice.lang : 'es-ES';
 
                 // CRITICAL: Keep a reference to prevent GC on mobile
                 utterancesRef.current.push(u);
@@ -271,7 +386,8 @@ export function useTTS() {
                 };
 
                 u.onerror = (event: any) => {
-                    if (event.error === 'interrupted') {
+                    // Handle cancellation or interruption (e.g. voice change)
+                    if (event.error === 'interrupted' || event.error === 'canceled') {
                         if (!isStoppingRef.current) {
                             setTimeout(speakNext, 100);
                         }
@@ -296,6 +412,12 @@ export function useTTS() {
                 setTimeout(() => {
                     if (!isStoppingRef.current && synth.current) {
                         synth.current.speak(u);
+
+                        // If we are supposed to be paused (e.g. changed voice while paused),
+                        // immediately pause the new utterance.
+                        if (isPausedRef.current) {
+                            synth.current.pause();
+                        }
                     }
                 }, delay);
             };
@@ -304,5 +426,19 @@ export function useTTS() {
         }, 150);
     };
 
-    return { isPlaying, isPaused, isLoading, play, stop, pause, resume, rate, setRate };
+    return {
+        isPlaying,
+        isPaused,
+        isLoading,
+        play,
+        stop,
+        pause,
+        resume,
+        rate,
+        setRate,
+        voices,
+        selectedVoice,
+        setSelectedVoice,
+        speakText
+    };
 }

@@ -24,7 +24,7 @@ interface ReaderControlsProps {
 export default function ReaderControls({ books = [] }: ReaderControlsProps) {
     const $preferences = useStore(preferences);
     const [isOpen, setIsOpen] = useState(false);
-    const { isPlaying, isPaused, isLoading, play, stop, setRate } = useTTS();
+    const { isPlaying, isPaused, isLoading, play, stop, setRate, voices, selectedVoice, setSelectedVoice } = useTTS();
 
     const handleAutoPlay = () => {
         // Encontrar el botón de "siguiente capítulo" en el DOM si existe
@@ -507,6 +507,36 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                                                 className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
                                                 style={{ backgroundColor: 'var(--surface-muted-border)', height: '8px' }}
                                             />
+                                        </div>
+
+                                        {/* Voice Selection */}
+                                        <div className="space-y-2 p-3 rounded-lg border surface-card">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <MessageSquare className="w-5 h-5 opacity-60" style={{ color: 'var(--color-text)' }} />
+                                                <span className="font-medium text-sm">Voz de Lectura</span>
+                                            </div>
+                                            <select
+                                                value={selectedVoice?.voiceURI || ''}
+                                                onChange={(e) => {
+                                                    const uri = (e.currentTarget as HTMLSelectElement).value;
+                                                    const voice = voices.find(v => v.voiceURI === uri) || null;
+                                                    setSelectedVoice(voice);
+                                                }}
+                                                className="w-full p-2 rounded-md border text-sm bg-[var(--surface-muted-bg)] cursor-pointer hover:border-[var(--color-link)] transition-colors"
+                                                style={{
+                                                    borderColor: 'var(--surface-muted-border)',
+                                                    color: 'var(--color-text)',
+                                                    outline: 'none'
+                                                }}
+                                                disabled={voices.length === 0}
+                                            >
+                                                {voices.length === 0 && <option value="">Cargando voces...</option>}
+                                                {voices.map((voice, idx) => (
+                                                    <option key={`${voice.voiceURI}-${idx}`} value={voice.voiceURI}>
+                                                        {voice.name}
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
 
                                         {/* Skip Options */}
