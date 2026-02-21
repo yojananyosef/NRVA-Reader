@@ -35,9 +35,14 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
             // Re-intentar encontrar contenido para empezar a leer
             let retries = 0;
             const tryPlay = () => {
-                const elements = document.querySelectorAll('.reader-content p, .reader-content h1');
+                const isCommentary = window.location.pathname.includes('commentary');
+                const selector = isCommentary
+                    ? '.reader-content h1, .reader-content .reader-text'
+                    : '.reader-content h1, .reader-content p';
+
+                const elements = document.querySelectorAll(selector);
                 if (elements.length > 0) {
-                    play('.reader-content p, .reader-content h1', handleAutoPlay);
+                    play(selector, handleAutoPlay);
                 } else if (retries < 10) {
                     retries++;
                     setTimeout(tryPlay, 500);
@@ -298,7 +303,13 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
 
                     <button
                         onClick={() => {
-                            play('.reader-content p, .reader-content h1', handleAutoPlay);
+                            // Detectar si estamos en vista de comentario
+                            const isCommentary = window.location.pathname.includes('commentary');
+                            const selector = isCommentary
+                                ? '.reader-content h1, .reader-content .reader-text'
+                                : '.reader-content h1, .reader-content p';
+
+                            play(selector, handleAutoPlay);
                         }}
                         onContextMenu={(e) => {
                             e.preventDefault();
