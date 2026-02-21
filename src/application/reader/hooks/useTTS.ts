@@ -8,7 +8,8 @@ export function useTTS() {
     const [isLoading, setIsLoading] = useState(false);
     const synth = useRef<SpeechSynthesis | null>(null);
     const utterance = useRef<SpeechSynthesisUtterance | null>(null);
-    const [rate, setRate] = useState(1.0);
+    const [rate, setRateState] = useState(1.0);
+    const rateRef = useRef(1.0);
     const elementsRef = useRef<Element[]>([]);
     const currentIndexRef = useRef(0);
     const isStoppingRef = useRef(false);
@@ -18,6 +19,17 @@ export function useTTS() {
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [selectedVoice, setSelectedVoiceState] = useState<SpeechSynthesisVoice | null>(null);
     const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+
+    // Update rate immediately
+    const setRate = useCallback((newRate: number) => {
+        setRateState(newRate);
+        rateRef.current = newRate;
+        // If speaking or pending, cancel current utterance to restart with new rate
+        // The error handler will trigger speakNext(), which will pick up the new rate
+        if (synth.current && (synth.current.speaking || synth.current.pending)) {
+            synth.current.cancel();
+        }
+    }, []);
 
     // Update preference when voice changes
     const setSelectedVoice = useCallback((voice: SpeechSynthesisVoice | null) => {
@@ -235,7 +247,7 @@ export function useTTS() {
         if (selectedVoice) {
             u.voice = selectedVoice;
         }
-        u.rate = rate;
+        u.rate = rateRef.current;
         u.lang = selectedVoice ? selectedVoice.lang : 'es-ES';
 
         u.onstart = () => setIsPlaying(true);
@@ -348,7 +360,7 @@ export function useTTS() {
                     u.voice = currentVoice;
                 }
 
-                u.rate = rate;
+                u.rate = rateRef.current;
                 u.lang = currentVoice ? currentVoice.lang : 'es-ES';
 
                 // CRITICAL: Keep a reference to prevent GC on mobile
