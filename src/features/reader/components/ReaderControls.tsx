@@ -1,8 +1,8 @@
 import { useStore } from '@nanostores/preact';
 import { createPortal } from 'preact/compat';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useState, useRef } from 'preact/hooks';
 import { preferences, type Theme, resetPreferences, type Preferences, PREFS_STORAGE_KEY, defaultPreferences } from '../../../stores/preferences';
-import { Settings, Type, AlignJustify, MoveHorizontal, Palette, RotateCcw, X, Sun, Moon, BookOpen, Menu, ChevronRight, Ruler, Play, MessageSquare, Quote, Check, Pause, BookSearch, Search, Monitor, MonitorOff } from 'lucide-preact';
+import { Settings, Type, AlignJustify, MoveHorizontal, Palette, RotateCcw, X, Sun, Moon, BookOpen, Menu, ChevronRight, Ruler, Play, Volume2, Pause, BookSearch, Search, Monitor, MonitorOff, ChevronDown, AArrowUp, Check } from 'lucide-preact';
 import ReaderRuler from './ReaderRuler';
 import { useTTS } from '../../../application/reader/hooks/useTTS';
 import { parseBibleQuery, getBookSuggestions } from '../../../utils/bibleParser';
@@ -25,6 +25,35 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
     const $preferences = useStore(preferences);
     const [isOpen, setIsOpen] = useState(false);
     const { isPlaying, isPaused, isLoading, play, stop, setRate, voices, selectedVoice, setSelectedVoice } = useTTS();
+
+    const getCleanName = (name: string, lang: string) => {
+        let cleanName = name
+            .replace(/Microsoft /g, '')
+            .replace(/Google /g, '')
+            .replace(/Desktop /g, '')
+            .replace(/Mobile /g, '')
+            .replace(/Android /g, '')
+            .replace(/iOS /g, '')
+            .replace(/Spanish/gi, 'Español')
+            .replace(/español/gi, 'Español')
+            .replace(/\(Spain\)/gi, '(España)')
+            .replace(/\(españa\)/gi, '(España)')
+            .replace(/\(Mexico\)/gi, '(México)')
+            .replace(/\(méxico\)/gi, '(México)')
+            .replace(/\(mexico\)/gi, '(México)')
+            .replace(/ - Spanish.*/, '')
+            // Asegurar espacio antes del paréntesis
+            .replace(/(\S)\(/g, '$1 (');
+
+        if (lang === 'es-CL' && !cleanName.includes('Chile')) cleanName += ' (Chile)';
+        if (lang === 'es-MX' && !cleanName.includes('México')) cleanName += ' (México)';
+        if (lang === 'es-AR' && !cleanName.includes('Argentina')) cleanName += ' (Argentina)';
+        if (lang === 'es-ES' && !cleanName.includes('España')) cleanName += ' (España)';
+        if (lang === 'es-US' && !cleanName.includes('EE.UU.')) cleanName += ' (EE.UU.)';
+        if (lang === 'es-419' && !cleanName.includes('Latinoamérica')) cleanName += ' (Latinoamérica)';
+
+        return cleanName;
+    };
 
     const handleAutoPlay = () => {
         // Encontrar el botón de "siguiente capítulo" en el DOM si existe
@@ -101,6 +130,51 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
     const [expandedSections, setExpandedSections] = useState<string[]>(['at']);
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState<Book[]>([]);
+
+    // Voice Selector State
+    const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
+
+    // Referencias para el control de clicks externos y z-index
+    const voiceSelectorRef = useRef<HTMLDivElement>(null);
+    const portalRef = useRef<HTMLDivElement>(null);
+
+    // Efecto para asegurar z-index máximo y ocultar flechas
+    useEffect(() => {
+        if (isOpen && portalRef.current) {
+            // Fuerza z-index máximo en el contenedor
+            portalRef.current.style.setProperty('z-index', '2147483647', 'important');
+
+            // Oculta flechas de navegación manipulando el DOM directamente para mayor seguridad
+            const arrows = document.querySelectorAll('.nav-arrow, .nav-arrow-fixed');
+            arrows.forEach(el => {
+                (el as HTMLElement).style.setProperty('display', 'none', 'important');
+            });
+        } else {
+            // Restaura flechas cuando se cierra
+            const arrows = document.querySelectorAll('.nav-arrow, .nav-arrow-fixed');
+            arrows.forEach(el => {
+                (el as HTMLElement).style.removeProperty('display');
+            });
+        }
+
+        return () => {
+            // Limpieza al desmontar
+            const arrows = document.querySelectorAll('.nav-arrow, .nav-arrow-fixed');
+            arrows.forEach(el => {
+                (el as HTMLElement).style.removeProperty('display');
+            });
+        };
+    }, [isOpen]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (voiceSelectorRef.current && !voiceSelectorRef.current.contains(event.target as Node)) {
+                setIsVoiceSelectorOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Projection Hook
     const { projectVerse, openProjectionWindow, isProjecting, clearProjection } = useProjectionSender();
@@ -279,7 +353,7 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
 
             {/* Navbar */}
             <nav
-                className="w-full h-16 border-b flex items-center justify-between px-4 md:px-8 transition-colors duration-300 ui-protect"
+                className="w-full h-16 border-b flex items-center justify-between px-4 md:px-8 transition-colors duration-300 ui-protect relative z-[40]"
                 style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', borderColor: 'color-mix(in srgb, var(--color-text), transparent 85%)' }}
             >
                 <div className="flex items-center gap-3">
@@ -360,8 +434,9 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
             {/* Settings Sheet (Sidebar) */}
             {typeof document !== 'undefined' && createPortal(
                 <div
+                    ref={portalRef}
                     className={`fixed inset-0 ui-protect transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                    style={{ top: '4rem', zIndex: 9999 }}
+                    style={{ top: '4rem', zIndex: 2147483647 }}
                 >
                     {/* Backdrop */}
                     <div
@@ -371,7 +446,7 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
 
                     {/* Panel */}
                     <div
-                        className={`absolute right-0 top-0 bottom-0 w-[85%] sm:w-full sm:max-w-sm border-l border-theme-text/10 shadow-2xl transform transition-transform duration-300 flex flex-col ui-protect ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                        className={`absolute right-0 top-0 bottom-0 w-[85%] sm:w-full sm:max-w-sm border-l border-theme-text/10 shadow-2xl transform transition-transform duration-300 flex flex-col ui-protect z-[2147483647] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
                         style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }}
                     >
 
@@ -464,49 +539,62 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                                                 />
                                             </div>
                                         </div>
+                                    </div>
 
-                                        {/* Red Letters Toggle */}
-                                        <div
-                                            className="flex items-center justify-between p-3 rounded-lg border surface-card"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Quote className="w-5 h-5 text-red-500 opacity-80" />
-                                                <span className="font-medium text-sm">Palabras de Jesús en Rojo</span>
-                                            </div>
-                                            <div
-                                                onClick={() => update('showRedLetters', !$preferences.showRedLetters)}
-                                                role="switch"
-                                                aria-checked={$preferences.showRedLetters}
-                                                tabIndex={0}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' || e.key === ' ') {
-                                                        update('showRedLetters', !$preferences.showRedLetters);
-                                                    }
-                                                }}
-                                                className="w-11 h-6 rounded-full transition-all duration-200 relative shadow-inner cursor-pointer"
-                                                style={{
-                                                    backgroundColor: $preferences.showRedLetters ? 'var(--color-link)' : 'color-mix(in srgb, var(--color-text), transparent 75%)',
-                                                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)'
-                                                }}
+                                    {/* Voice Selection */}
+                                    <div className="space-y-4">
+                                        {/* Visual "Button" imitating CommentarySelector button */}
+                                        <div className="relative w-full" ref={voiceSelectorRef} style={{ zIndex: isVoiceSelectorOpen ? 50 : 0 }}>
+                                            <button
+                                                onClick={() => setIsVoiceSelectorOpen(!isVoiceSelectorOpen)}
+                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 border relative z-10 ${isVoiceSelectorOpen ? 'bg-[var(--color-link)] text-white shadow-lg border-transparent' : 'bg-[var(--surface-muted-bg)] text-[var(--color-text)] border-[var(--surface-muted-border)] shadow-sm'}`}
                                             >
-                                                <div
-                                                    className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full shadow-md transition-all duration-200 ${$preferences.showRedLetters ? 'left-[22px]' : 'left-0.5'}`}
-                                                    style={{
-                                                        backgroundColor: 'var(--color-bg)',
-                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
-                                                    }}
-                                                />
-                                            </div>
+                                                <div className={`p-1.5 rounded-lg shrink-0 ${isVoiceSelectorOpen ? 'bg-white/20' : 'bg-[var(--color-link)]/10 text-[var(--color-link)]'}`}>
+                                                    <Volume2 className="w-5 h-5" />
+                                                </div>
+
+                                                <div className="flex-1 min-w-0 flex flex-col items-start">
+                                                    <span className="font-bold text-sm truncate w-full text-left">
+                                                        {selectedVoice ? getCleanName(selectedVoice.name, selectedVoice.lang) : 'Seleccionar voz...'}
+                                                    </span>
+                                                </div>
+
+                                                <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isVoiceSelectorOpen ? 'rotate-180' : 'opacity-50'}`} />
+                                            </button>
+
+                                            {isVoiceSelectorOpen && (
+                                                <div className="absolute top-full left-0 right-0 mt-2 max-h-[300px] overflow-y-auto bg-[var(--color-bg)] border border-[var(--surface-muted-border)] rounded-xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 custom-scrollbar">
+                                                    <div className="grid grid-cols-1 gap-1">
+                                                        {voices.length === 0 ? (
+                                                            <div className="px-3 py-2 text-sm opacity-50">Cargando voces...</div>
+                                                        ) : (
+                                                            voices.map((voice, idx) => (
+                                                                <button
+                                                                    key={`${voice.voiceURI}-${idx}`}
+                                                                    onClick={() => {
+                                                                        setSelectedVoice(voice);
+                                                                        setIsVoiceSelectorOpen(false);
+                                                                    }}
+                                                                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors text-sm ${selectedVoice?.voiceURI === voice.voiceURI ? 'bg-[var(--color-link)]/10 text-[var(--color-link)] font-bold' : 'hover:bg-[var(--surface-hover-bg)] text-[var(--color-text)] opacity-80 hover:opacity-100'}`}
+                                                                >
+                                                                    <span className="truncate pr-2">{getCleanName(voice.name, voice.lang)}</span>
+                                                                    {selectedVoice?.voiceURI === voice.voiceURI && <Check className="w-4 h-4 shrink-0" />}
+                                                                </button>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Audio Speed */}
-                                        <div className="space-y-2 p-3 rounded-lg border surface-card">
+                                        <div className="space-y-2 p-3 rounded-xl border border-[var(--surface-muted-border)] bg-[var(--surface-muted-bg)]/30">
                                             <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <Play className="w-5 h-5 opacity-60" style={{ color: 'var(--color-text)' }} />
-                                                    <span className="font-medium text-sm">Velocidad de Voz</span>
+                                                <div className="flex items-center gap-2 opacity-80">
+                                                    <Play className="w-4 h-4" />
+                                                    <span className="text-xs font-medium">Velocidad</span>
                                                 </div>
-                                                <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--surface-muted-border)', fontSize: '12px' }}>x{$preferences.speechRate}</span>
+                                                <span className="text-xs font-mono px-2 py-0.5 rounded text-[var(--color-link)] font-bold" style={{ backgroundColor: 'var(--surface-muted-border)', fontSize: '11px' }}>x{$preferences.speechRate}</span>
                                             </div>
                                             <input
                                                 type="range"
@@ -515,79 +603,13 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                                                 step="0.1"
                                                 value={$preferences.speechRate}
                                                 onInput={(e) => update('speechRate', Number((e.target as HTMLInputElement).value))}
-                                                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
-                                                style={{ backgroundColor: 'var(--surface-muted-border)', height: '8px' }}
+                                                className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
+                                                style={{ backgroundColor: 'var(--surface-muted-border)' }}
                                             />
-                                        </div>
-
-                                        {/* Voice Selection */}
-                                        <div className="space-y-2 p-3 rounded-lg border surface-card">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <MessageSquare className="w-5 h-5 opacity-60" style={{ color: 'var(--color-text)' }} />
-                                                <span className="font-medium text-sm">Voz de Lectura</span>
-                                            </div>
-                                            <select
-                                                value={selectedVoice?.voiceURI || ''}
-                                                onChange={(e) => {
-                                                    const uri = (e.currentTarget as HTMLSelectElement).value;
-                                                    const voice = voices.find(v => v.voiceURI === uri) || null;
-                                                    setSelectedVoice(voice);
-                                                }}
-                                                className="w-full p-2 rounded-md border text-sm bg-[var(--surface-muted-bg)] cursor-pointer hover:border-[var(--color-link)] transition-colors"
-                                                style={{
-                                                    borderColor: 'var(--surface-muted-border)',
-                                                    color: 'var(--color-text)',
-                                                    outline: 'none'
-                                                }}
-                                                disabled={voices.length === 0}
-                                            >
-                                                {voices.length === 0 && <option value="">Cargando voces...</option>}
-                                                {voices.map((voice, idx) => (
-                                                    <option key={`${voice.voiceURI}-${idx}`} value={voice.voiceURI}>
-                                                        {voice.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        {/* Skip Options */}
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => update('skipVerses', !$preferences.skipVerses)}
-                                                className="p-3 rounded-lg border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer"
-                                                style={{
-                                                    borderColor: $preferences.skipVerses ? 'var(--color-link)' : 'color-mix(in srgb, var(--color-text), transparent 90%)',
-                                                    backgroundColor: $preferences.skipVerses ? 'color-mix(in srgb, var(--color-link), transparent 90%)' : 'color-mix(in srgb, var(--color-text), transparent 95%)',
-                                                    color: $preferences.skipVerses ? 'var(--color-link)' : 'var(--color-text)'
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <Quote className="w-5 h-5" />
-                                                    {$preferences.skipVerses && <Check className="w-4 h-4" />}
-                                                </div>
-                                                <span className="text-xs font-medium">Saltar Versos</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => update('skipFootnotes', !$preferences.skipFootnotes)}
-                                                className="p-3 rounded-lg border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer"
-                                                style={{
-                                                    borderColor: $preferences.skipFootnotes ? 'var(--color-link)' : 'color-mix(in srgb, var(--color-text), transparent 90%)',
-                                                    backgroundColor: $preferences.skipFootnotes ? 'color-mix(in srgb, var(--color-link), transparent 90%)' : 'color-mix(in srgb, var(--color-text), transparent 95%)',
-                                                    color: $preferences.skipFootnotes ? 'var(--color-link)' : 'var(--color-text)'
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <MessageSquare className="w-5 h-5" />
-                                                    {$preferences.skipFootnotes && <Check className="w-4 h-4" />}
-                                                </div>
-                                                <span className="text-xs font-medium">Saltar Notas</span>
-                                            </button>
                                         </div>
                                     </div>
 
-                                    <div className="h-px bg-[var(--color-text)] opacity-10 my-4" />
+                                    <div className="h-px bg-[var(--surface-muted-border)] my-4 opacity-50 pointer-events-none" />
 
                                     {/* Theme */}
                                     <div className="space-y-3">
@@ -618,6 +640,8 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                                             ))}
                                         </div>
                                     </div>
+
+                                    <div className="h-px bg-[var(--surface-muted-border)] my-4 opacity-50" />
 
                                     {/* Font Family */}
                                     <div className="space-y-3">
@@ -653,7 +677,7 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                                         </div>
                                     </div>
 
-                                    <div className="h-px bg-theme-text/10 my-4" />
+                                    <div className="h-px bg-[var(--surface-muted-border)] my-6 opacity-50" />
 
                                     {/* Sliders Section */}
                                     <div className="space-y-6">
@@ -661,10 +685,10 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                                         <div className="space-y-3">
                                             <div className="flex items-center justify-between text-sm font-medium opacity-80">
                                                 <div className="flex items-center gap-2">
-                                                    <Type className="w-4 h-4" />
+                                                    <AArrowUp className="w-4 h-4" />
                                                     <label>Tamaño</label>
                                                 </div>
-                                                <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 90%)', fontSize: '12px' }}>{$preferences.fontSize}px</span>
+                                                <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 90%)', fontSize: '12px', minWidth: '40px', textAlign: 'center' }}>{$preferences.fontSize}px</span>
                                             </div>
                                             <input
                                                 type="range"

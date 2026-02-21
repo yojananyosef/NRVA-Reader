@@ -54,9 +54,13 @@ export function useTTS() {
                 allVoices.forEach(voice => {
                     if (voice.lang && voice.lang.toLowerCase().includes('es')) {
                         // Use name + lang as key to distinguish variants (e.g. es-ES vs es-MX)
-                        const key = `${voice.name}-${voice.lang}`;
-                        if (!uniqueVoicesMap.has(key)) {
-                            uniqueVoicesMap.set(key, voice);
+                        // If voiceURI is identical, the map will overwrite, keeping only the last one.
+                        // However, if we have duplicate voices with DIFFERENT objects but SAME URI,
+                        // we should trust the URI as the unique identifier.
+
+                        // Check if we already have this URI
+                        if (!uniqueVoicesMap.has(voice.voiceURI)) {
+                            uniqueVoicesMap.set(voice.voiceURI, voice);
                         }
                     }
                 });
