@@ -2,23 +2,73 @@ import { useState, useEffect } from 'preact/hooks';
 
 const STREAK_KEY = 'user-streak';
 
+// Helper to get date string in local timezone (YYYY-MM-DD)
+const getLocalDateString = (date: Date = new Date()) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+// Helper to calculate best streak from history
+const calculateBestStreak = (history: string[]): number => {
+    if (!history || history.length === 0) return 0;
+
+    // Sort dates
+    const sortedDates = [...history].sort();
+
+    let maxStreak = 1;
+    let currentRun = 1;
+
+    for (let i = 1; i < sortedDates.length; i++) {
+        const prevDate = new Date(sortedDates[i - 1]);
+        const currDate = new Date(sortedDates[i]);
+
+        // Calculate difference in days
+        const diffTime = Math.abs(currDate.getTime() - prevDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+            currentRun++;
+        } else if (diffDays > 1) {
+            // Gap found, reset run
+            currentRun = 1;
+        }
+        // If diffDays === 0 (same day), do nothing (keep current run)
+
+        if (currentRun > maxStreak) {
+            maxStreak = currentRun;
+        }
+    }
+
+    return maxStreak;
+};
+
 interface StreakData {
     currentStreak: number;
     lastVisit: string;
     visitHistory: string[]; // Keep track of dates visited
+    yearlyVisits: Record<string, number>; // Track visits per year
+    bestStreak?: number; // Highest streak ever achieved
 }
 
 export interface WeeklyProgress {
     currentStreak: number;
     daysVisited: boolean[]; // Sunday to Saturday (0-6)
     todayIndex: number;
+    totalDaysThisYear: number;
+    weeksStreak: number;
+    bestStreak: number;
 }
 
 export function useStreak() {
     const [progress, setProgress] = useState<WeeklyProgress>({
         currentStreak: 0,
         daysVisited: [false, false, false, false, false, false, false],
-        todayIndex: 0
+        todayIndex: 0,
+        totalDaysThisYear: 0,
+        weeksStreak: 0,
+        bestStreak: 0
     });
 
     useEffect(() => {
@@ -28,20 +78,44 @@ export function useStreak() {
     const updateStreak = () => {
         try {
             const now = new Date();
-            const today = now.toISOString().split('T')[0];
+            const today = getLocalDateString(now);
+            const currentYear = now.getFullYear().toString();
             const stored = localStorage.getItem(STREAK_KEY);
-            let data: StreakData = stored ? JSON.parse(stored) : { currentStreak: 0, lastVisit: '', visitHistory: [] };
+            let data: StreakData = stored ? JSON.parse(stored) : {
+                currentStreak: 0,
+                lastVisit: '',
+                visitHistory: [],
+                yearlyVisits: {},
+                bestStreak: 0
+            };
 
             // Ensure visitHistory exists for legacy data
             if (!data.visitHistory) {
                 data.visitHistory = data.lastVisit ? [data.lastVisit] : [];
             }
 
+            // Initialize yearlyVisits if missing
+            if (!data.yearlyVisits) {
+                data.yearlyVisits = {};
+                // Recover count from history for current year if possible
+                if (data.visitHistory) {
+                    const thisYearVisits = data.visitHistory.filter(date => date.startsWith(currentYear)).length;
+                    data.yearlyVisits[currentYear] = thisYearVisits;
+                }
+            }
+
+            // Recalculate bestStreak from history if missing or possibly outdated
+            // This ensures we catch historical streaks that weren't tracked before
+            const calculatedBest = calculateBestStreak(data.visitHistory);
+            if (data.bestStreak === undefined || calculatedBest > data.bestStreak) {
+                data.bestStreak = calculatedBest;
+            }
+
             // Update streak logic
             if (data.lastVisit !== today) {
                 const yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
-                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                const yesterdayStr = getLocalDateString(yesterday);
 
                 if (data.lastVisit === yesterdayStr) {
                     data.currentStreak += 1;
@@ -51,17 +125,35 @@ export function useStreak() {
                     data.currentStreak = 1;
                 }
 
+                // Update best streak
+                if (data.currentStreak > (data.bestStreak || 0)) {
+                    data.bestStreak = data.currentStreak;
+                }
+
                 data.lastVisit = today;
                 if (!data.visitHistory.includes(today)) {
                     data.visitHistory.push(today);
+                    // Increment yearly visits
+                    data.yearlyVisits[currentYear] = (data.yearlyVisits[currentYear] || 0) + 1;
                 }
 
-                // Cleanup old history (keep last 30 days)
-                if (data.visitHistory.length > 30) {
-                    data.visitHistory = data.visitHistory.slice(-30);
+                // Cleanup old history (keep last 60 days to ensure we have enough context)
+                if (data.visitHistory.length > 60) {
+                    data.visitHistory = data.visitHistory.slice(-60);
+                }
+
+                // Final check: maybe the new streak is the best ever
+                if (data.currentStreak > data.bestStreak) {
+                    data.bestStreak = data.currentStreak;
                 }
 
                 localStorage.setItem(STREAK_KEY, JSON.stringify(data));
+            } else {
+                // Even if already visited today, check if currentStreak > bestStreak just in case (e.g. migration)
+                if (data.currentStreak > (data.bestStreak || 0)) {
+                    data.bestStreak = data.currentStreak;
+                    localStorage.setItem(STREAK_KEY, JSON.stringify(data));
+                }
             }
 
             // Calculate weekly progress
@@ -75,7 +167,7 @@ export function useStreak() {
             for (let i = 0; i < 7; i++) {
                 const day = new Date(weekStart);
                 day.setDate(weekStart.getDate() + i);
-                const dayStr = day.toISOString().split('T')[0];
+                const dayStr = getLocalDateString(day);
 
                 // A day is visited if it's in history
                 // OR if it's today (we just updated/verified it)
@@ -84,30 +176,27 @@ export function useStreak() {
                 }
             }
 
-            // Special logic requested by user:
-            // "comenzar a marcar desde el dia, por ejemplo si mi primera racha es en miercoles desde alli y dejar los otros sin marcar"
-            // This means we should visually indicate the streak within the week.
-            // If the streak is 3 days, and today is Friday, then Wed, Thu, Fri should be marked.
-            // If streak > 7, all active days in week are part of streak.
-
-            // Actually, the user's request "comenzar a marcar desde el dia... si mi primera racha es en miercoles" 
-            // implies showing the streak visual representation on the calendar.
-            // With the `daysVisited` array we know exactly which days were visited.
-            // The UI can decide how to render the "flame" or "check" based on this array.
+            // Calculate weeks streak (rough estimate based on days / 7)
+            const weeksStreak = Math.floor(data.currentStreak / 7);
 
             setProgress({
                 currentStreak: data.currentStreak,
                 daysVisited,
-                todayIndex: currentDayIndex
+                todayIndex: currentDayIndex,
+                totalDaysThisYear: data.yearlyVisits[currentYear] || 1, // At least 1 (today)
+                weeksStreak,
+                bestStreak: data.bestStreak || data.currentStreak
             });
-
-        } catch (e) {
-            console.error('Error updating streak:', e);
+        } catch (error) {
+            console.error('Error updating streak:', error);
             // Fallback
             setProgress({
                 currentStreak: 1,
                 daysVisited: [false, false, false, false, false, false, false],
-                todayIndex: new Date().getDay()
+                todayIndex: new Date().getDay(),
+                totalDaysThisYear: 1,
+                weeksStreak: 0,
+                bestStreak: 1
             });
         }
     };
