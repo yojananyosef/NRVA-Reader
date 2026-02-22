@@ -518,19 +518,26 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                                         <div className="relative w-full" ref={voiceSelectorRef} style={{ zIndex: isVoiceSelectorOpen ? 50 : 0 }}>
                                             <button
                                                 onClick={() => setIsVoiceSelectorOpen(!isVoiceSelectorOpen)}
-                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 border relative z-10 ${isVoiceSelectorOpen ? 'bg-[var(--color-link)] text-white shadow-lg border-transparent' : 'bg-[var(--surface-muted-bg)] text-[var(--color-text)] border-[var(--surface-muted-border)] shadow-sm'}`}
+                                                className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 border relative z-10 ${isVoiceSelectorOpen
+                                                        ? 'bg-[var(--surface-active-bg)] text-[var(--color-link)] border-[var(--color-link)] shadow-md ring-1 ring-[var(--color-link)]/20'
+                                                        : '!bg-[color-mix(in_srgb,var(--surface-muted-bg)_30%,transparent)] text-[var(--color-text)] border-[var(--surface-muted-border)] hover:border-[var(--color-link)]/30 hover:shadow-md'
+                                                    }`}
                                             >
-                                                <div className={`p-1.5 rounded-lg shrink-0 ${isVoiceSelectorOpen ? 'bg-white/20' : 'bg-[var(--color-link)]/10 text-[var(--color-link)]'}`}>
+                                                <div className={`p-2 rounded-lg shrink-0 transition-colors ${isVoiceSelectorOpen
+                                                        ? 'bg-[var(--color-link)]/10 text-[var(--color-link)]'
+                                                        : 'bg-[var(--surface-hover-bg)] text-[var(--color-text)] opacity-70 group-hover:opacity-100 group-hover:text-[var(--color-link)]'
+                                                    }`}>
                                                     <Volume2 className="w-5 h-5" />
                                                 </div>
 
-                                                <div className="flex-1 min-w-0 flex flex-col items-start">
-                                                    <span className="font-bold text-sm truncate w-full text-left">
+                                                <div className="flex-1 min-w-0 flex flex-col items-start gap-0.5">
+                                                    <span className="text-xs font-medium opacity-60 uppercase tracking-wider">Voz de lectura</span>
+                                                    <span className="font-semibold text-sm truncate w-full text-left">
                                                         {selectedVoice ? selectedVoice.label : 'Seleccionar voz...'}
                                                     </span>
                                                 </div>
 
-                                                <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isVoiceSelectorOpen ? 'rotate-180' : 'opacity-50'}`} />
+                                                <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isVoiceSelectorOpen ? 'rotate-180 text-[var(--color-link)]' : 'opacity-40'}`} />
                                             </button>
 
                                             {isVoiceSelectorOpen && (
@@ -566,7 +573,7 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                                         </div>
 
                                         {/* Audio Speed */}
-                                        <div className="space-y-2 p-3 rounded-xl border border-[var(--surface-muted-border)] bg-[var(--surface-muted-bg)]/30">
+                                        <div className="space-y-2 p-3 rounded-xl border border-[var(--surface-muted-border)] bg-[color-mix(in_srgb,var(--surface-muted-bg)_30%,transparent)]">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2 opacity-80">
                                                     <Play className="w-4 h-4" />
