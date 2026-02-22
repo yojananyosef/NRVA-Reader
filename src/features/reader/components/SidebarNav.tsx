@@ -118,6 +118,20 @@ export default function SidebarNav({ showTrigger = false, mode = "inline" }: Pro
     } catch { }
   }, [collapsed]);
 
+  // Hide arrows when mobile sidebar is open
+  useEffect(() => {
+    const arrows = document.querySelectorAll('.nav-arrow, .nav-arrow-fixed');
+    if (open) {
+      arrows.forEach(el => {
+        (el as HTMLElement).style.setProperty('display', 'none', 'important');
+      });
+    } else {
+      arrows.forEach(el => {
+        (el as HTMLElement).style.removeProperty('display');
+      });
+    }
+  }, [open]);
+
   // ELIMINADO: Ya no necesitamos useLayoutEffect para calcular offsets manuales con JS
   // ya que lo maneja el CSS Grid en ReaderLayout.astro
 
