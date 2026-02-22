@@ -1,1 +1,26 @@
-[{"id":"annual-thematic","title":"Plan Anual Temático","description":"Recorre la Biblia en 12 temas clave, con lecturas diarias y enfoque accesible.","durationDays":365,"category":"Anual","url":"#"}]
+[
+  {
+    "id": "annual-thematic",
+    "title": "Plan Anual Temático",
+    "description": "Recorre la Biblia en 12 temas clave, con lecturas diarias y enfoque accesible.",
+    "durationDays": 365,
+    "category": "Anual",
+    "url": "#"
+  },
+  {
+    "id": "daniel",
+    "title": "El Libro de Daniel",
+    "description": "Un viaje de 16 días por el libro de Daniel, descubriendo profecías asombrosas y lecciones de fidelidad inquebrantable.",
+    "durationDays": 16,
+    "category": "Profecía",
+    "url": "#"
+  },
+  {
+    "id": "apocalipsis",
+    "title": "Apocalipsis",
+    "description": "Descubre el libro de Apocalipsis en 18 lecciones llenas de esperanza, revelando a Jesús como el Vencedor final.",
+    "durationDays": 18,
+    "category": "Profecía",
+    "url": "#"
+  }
+]

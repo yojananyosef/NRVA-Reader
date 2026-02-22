@@ -434,7 +434,7 @@ export default function PlanDay({
 
         {localEgwReadings.length > 0 && (
           <div className="space-y-3">
-            <h3 className="text-sm font-bold uppercase tracking-wider opacity-60">Lecturas de Apoyo (EGW)</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wider opacity-60">Material Complementario</h3>
             {localEgwReadings.map((r) => (
               <div
                 key={r.label}
