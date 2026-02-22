@@ -1,5 +1,5 @@
 import { createPortal } from "preact/compat";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useState, useRef } from "preact/hooks";
 
 // Iconos SVG en línea para evitar dependencias y conflictos de estilos
 const ArrowLeftIcon = (props: any) => (
@@ -62,9 +62,74 @@ export default function ArrowNavigation({
     nextLabel = "Siguiente",
 }: ArrowNavigationProps) {
     const [mounted, setMounted] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
+    const timerRef = useRef<any>(null);
+    const isTouchScrollingRef = useRef(false);
 
     useEffect(() => {
         setMounted(true);
+
+        // Función para mostrar las flechas y reiniciar el temporizador
+        const showArrows = () => {
+            setIsVisible(true);
+            if (timerRef.current) clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => {
+                setIsVisible(false);
+            }, 3000); // 3 segundos de inactividad
+        };
+
+        const handleInteraction = () => {
+            showArrows();
+        };
+
+        const handleTouchStart = () => {
+            isTouchScrollingRef.current = false;
+            showArrows();
+        };
+
+        const handleTouchMove = () => {
+            // Ocultar inmediatamente al arrastrar en móvil
+            isTouchScrollingRef.current = true;
+            setIsVisible(false);
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
+
+        const handleTouchEnd = () => {
+            // Al soltar, permitimos que el scroll (si hay inercia) o la inactividad manejen la visibilidad
+            setTimeout(() => {
+                isTouchScrollingRef.current = false;
+            }, 100);
+        };
+
+        const handleScroll = () => {
+            // Si no estamos arrastrando activamente (touch), mostramos las flechas
+            if (!isTouchScrollingRef.current) {
+                showArrows();
+            }
+        };
+
+        // Event Listeners
+        window.addEventListener('mousemove', handleInteraction);
+        window.addEventListener('keydown', handleInteraction);
+        window.addEventListener('click', handleInteraction);
+        window.addEventListener('touchstart', handleTouchStart, { passive: true });
+        window.addEventListener('touchmove', handleTouchMove, { passive: true });
+        window.addEventListener('touchend', handleTouchEnd, { passive: true });
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        // Iniciar visible
+        showArrows();
+
+        return () => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+            window.removeEventListener('mousemove', handleInteraction);
+            window.removeEventListener('keydown', handleInteraction);
+            window.removeEventListener('click', handleInteraction);
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchmove', handleTouchMove);
+            window.removeEventListener('touchend', handleTouchEnd);
+            window.removeEventListener('scroll', handleScroll);
+        };
     }, []);
 
     const renderArrow = (direction: 'prev' | 'next') => {
@@ -82,12 +147,14 @@ export default function ArrowNavigation({
             ? { left: 'calc(var(--sidebar-current-width, 0rem) + 1rem)' }
             : { right: '1rem' };
 
+        const className = `nav-arrow-fixed ${!isVisible ? 'nav-arrow-hidden' : ''}`;
+
         if (href) {
             return (
                 <a
                     href={href}
                     onClick={onClick ? (e) => onClick(e) : undefined}
-                    class="nav-arrow-fixed"
+                    class={className}
                     aria-label={label}
                     {...dataAttr}
                     data-astro-prefetch
@@ -102,7 +169,7 @@ export default function ArrowNavigation({
             <button
                 type="button"
                 onClick={onClick ? (e) => onClick(e) : undefined}
-                class="nav-arrow-fixed"
+                class={className}
                 aria-label={label}
                 {...dataAttr}
                 style={positionStyle}
@@ -135,18 +202,27 @@ export default function ArrowNavigation({
             color: var(--color-link, #2e7d32) !important;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.2s ease-in-out;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none !important;
             padding: 0 !important;
             margin: 0 !important;
             appearance: none !important;
             backdrop-filter: blur(8px);
         }
+        .nav-arrow-hidden {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            transform: translateY(-50%) scale(0.9) !important;
+        }
         .nav-arrow-fixed:hover {
             transform: translateY(-50%) scale(1.1);
             background-color: var(--color-link, #2e7d32) !important;
             color: white !important;
             box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
         }
         @media (max-width: 768px) {
             .nav-arrow-fixed {
