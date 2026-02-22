@@ -22,5 +22,61 @@
     "durationDays": 18,
     "category": "Profecía",
     "url": "#"
+  },
+  {
+    "id": "el-sentido-de-la-fe",
+    "title": "El Sentido de la Fe",
+    "description": "Un viaje de 15 días por los fundamentos de la fe cristiana, desde la existencia de Dios hasta la decisión de la fe.",
+    "durationDays": 15,
+    "category": "Fundamentos",
+    "url": "#"
+  },
+  {
+    "id": "en-la-mira-de-la-verdad",
+    "title": "En la mira de la verdad",
+    "description": "10 lecciones sobre textos difíciles de la Biblia para desarrollar una mente robusta, analítica y comprensiva.",
+    "durationDays": 10,
+    "category": "Doctrina",
+    "url": "#"
+  },
+  {
+    "id": "hogar-dulce-hogar",
+    "title": "Hogar Dulce Hogar",
+    "description": "8 lecciones para transformar tu familia y hacer de tu hogar un pedazo de cielo en la tierra.",
+    "durationDays": 8,
+    "category": "Familia",
+    "url": "#"
+  },
+  {
+    "id": "la-maquina-humana",
+    "title": "La Máquina Humana",
+    "description": "8 lecciones sobre los principios que promueven la salud física, mental y espiritual a través de los 8 remedios naturales.",
+    "durationDays": 8,
+    "category": "Salud",
+    "url": "#"
+  },
+  {
+    "id": "mente-feliz",
+    "title": "Mente Feliz",
+    "description": "8 lecciones para disfrutar de equilibrio y salud mental, superando la ansiedad, la tristeza y los problemas emocionales.",
+    "durationDays": 8,
+    "category": "Salud Mental",
+    "url": "#"
+  },
+  {
+    "id": "sentimientos",
+    "title": "Sentimientos: La Ciencia del Existir",
+    "description": "8 lecciones para comprender tus emociones, fortalecer tu salud mental y encontrar propósito a la luz de la Biblia y la ciencia.",
+    "durationDays": 8,
+    "category": "Salud Mental",
+    "url": "#"
+  },
+  {
+    "id": "sin-tabu",
+    "title": "Sin Tabú",
+    "description": "7 lecciones para comprender la sexualidad, el matrimonio y la pornografía a la luz de la Biblia.",
+    "durationDays": 7,
+    "category": "Salud Mental",
+    "url": "#"
   }
 ]

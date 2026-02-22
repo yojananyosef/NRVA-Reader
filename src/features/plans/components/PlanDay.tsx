@@ -379,9 +379,9 @@ export default function PlanDay({
             </div>
           )}
 
-          {localReadings.map((r) => (
+          {localReadings.map((r, i) => (
             <div
-              key={`${r.book}-${r.chapter}`}
+              key={`${r.book}-${r.chapter}-${i}`}
               onClick={() => openReadingModal(r)}
               role="button"
               tabIndex={0}
