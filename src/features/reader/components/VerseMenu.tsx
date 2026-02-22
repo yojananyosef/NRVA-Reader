@@ -64,7 +64,7 @@ export default function VerseMenu({
             className={`fixed z-50 bg-[var(--surface-muted-bg)] border border-[var(--surface-muted-border)] rounded-lg shadow-xl p-2 flex items-center gap-2 animate-in fade-in duration-300`}
             style={{
                 top: position.top,
-                left: isMobile ? '50%' : position.left,
+                left: '50%',
                 transform: 'translate(-50%, 10px)',
                 width: 'max-content',
                 maxWidth: '95vw'
