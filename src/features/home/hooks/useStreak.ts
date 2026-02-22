@@ -176,8 +176,28 @@ export function useStreak() {
                 }
             }
 
-            // Calculate weeks streak (rough estimate based on days / 7)
-            const weeksStreak = Math.floor(data.currentStreak / 7);
+            // Calculate weeks streak (based on calendar weeks spanned)
+            let weeksStreak = 0;
+            if (data.currentStreak > 0) {
+                const currentStreakDate = new Date(now);
+                const startStreakDate = new Date(currentStreakDate);
+                startStreakDate.setDate(currentStreakDate.getDate() - (data.currentStreak - 1));
+
+                // Get the Sunday of the week for start date
+                const startSunday = new Date(startStreakDate);
+                startSunday.setDate(startStreakDate.getDate() - startSunday.getDay());
+                startSunday.setHours(0, 0, 0, 0);
+
+                // Get the Sunday of the week for end date
+                const endSunday = new Date(currentStreakDate);
+                endSunday.setDate(currentStreakDate.getDate() - endSunday.getDay());
+                endSunday.setHours(0, 0, 0, 0);
+
+                // Calculate difference in weeks
+                const diffTime = Math.abs(endSunday.getTime() - startSunday.getTime());
+                const diffWeeks = Math.round(diffTime / (1000 * 60 * 60 * 24 * 7));
+                weeksStreak = diffWeeks + 1;
+            }
 
             setProgress({
                 currentStreak: data.currentStreak,
