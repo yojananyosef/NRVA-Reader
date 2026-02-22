@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
 import { preferences } from '../../../stores/preferences';
+import { type VirtualVoice, mapSystemVoicesToVirtual } from '../utils/voiceUtils';
 
 export function useTTS() {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -16,9 +17,9 @@ export function useTTS() {
     const utterancesRef = useRef<SpeechSynthesisUtterance[]>([]); // Prevent GC
 
     // Voice Selection State
-    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-    const [selectedVoice, setSelectedVoiceState] = useState<SpeechSynthesisVoice | null>(null);
-    const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+    const [voices, setVoices] = useState<VirtualVoice[]>([]);
+    const [selectedVoice, setSelectedVoiceState] = useState<VirtualVoice | null>(null);
+    const selectedVoiceRef = useRef<VirtualVoice | null>(null);
 
     // Update rate immediately
     const setRate = useCallback((newRate: number) => {
@@ -32,12 +33,12 @@ export function useTTS() {
     }, []);
 
     // Update preference when voice changes
-    const setSelectedVoice = useCallback((voice: SpeechSynthesisVoice | null) => {
+    const setSelectedVoice = useCallback((voice: VirtualVoice | null) => {
         setSelectedVoiceState(voice);
         selectedVoiceRef.current = voice;
         if (voice) {
             const current = preferences.get();
-            preferences.set({ ...current, selectedVoiceURI: voice.voiceURI });
+            preferences.set({ ...current, selectedVoiceURI: voice.id });
 
             // If playing or paused, update immediately
             if (synth.current && (synth.current.speaking || synth.current.pending)) {
@@ -60,34 +61,15 @@ export function useTTS() {
                 // Get all voices
                 const allVoices = synth.current.getVoices();
 
-                // Filter for Spanish voices and remove duplicates more aggressively
-                const uniqueVoicesMap = new Map();
+                // Map to Virtual Voices
+                const virtualVoices = mapSystemVoicesToVirtual(allVoices);
 
-                allVoices.forEach(voice => {
-                    if (voice.lang && voice.lang.toLowerCase().includes('es')) {
-                        // Use name + lang as key to distinguish variants (e.g. es-ES vs es-MX)
-                        // If voiceURI is identical, the map will overwrite, keeping only the last one.
-                        // However, if we have duplicate voices with DIFFERENT objects but SAME URI,
-                        // we should trust the URI as the unique identifier.
-
-                        // Check if we already have this URI
-                        if (!uniqueVoicesMap.has(voice.voiceURI)) {
-                            uniqueVoicesMap.set(voice.voiceURI, voice);
-                        }
-                    }
-                });
-
-                const spanishVoices = Array.from(uniqueVoicesMap.values());
-
-                // Debug log
-                console.log(`TTS: Found ${allVoices.length} voices total, ${spanishVoices.length} Spanish voices.`);
-
-                setVoices(spanishVoices);
+                setVoices(virtualVoices);
 
                 // Auto-select based on preference or default
                 const prefs = preferences.get();
                 if (prefs.selectedVoiceURI) {
-                    const savedVoice = spanishVoices.find(v => v.voiceURI === prefs.selectedVoiceURI);
+                    const savedVoice = virtualVoices.find(v => v.id === prefs.selectedVoiceURI);
                     if (savedVoice) {
                         setSelectedVoiceState(savedVoice);
                         selectedVoiceRef.current = savedVoice;
@@ -96,8 +78,9 @@ export function useTTS() {
                 }
 
                 // Default to first available if no preference match
-                if (spanishVoices.length > 0 && !selectedVoiceRef.current) {
-                    const defaultVoice = spanishVoices[0];
+                if (virtualVoices.length > 0 && !selectedVoiceRef.current) {
+                    // Default to Spain Female if available, else first one
+                    const defaultVoice = virtualVoices.find(v => v.id === 'es-ES-female') || virtualVoices[0];
                     setSelectedVoiceState(defaultVoice);
                     selectedVoiceRef.current = defaultVoice;
                 }
@@ -244,11 +227,16 @@ export function useTTS() {
         }
 
         const u = new SpeechSynthesisUtterance(text);
-        if (selectedVoice) {
-            u.voice = selectedVoice;
+
+        const voice = selectedVoice?.systemVoice;
+        if (voice) {
+            u.voice = voice;
+            u.lang = voice.lang;
+        } else {
+            u.lang = selectedVoice?.locale || 'es-ES';
         }
+
         u.rate = rateRef.current;
-        u.lang = selectedVoice ? selectedVoice.lang : 'es-ES';
 
         u.onstart = () => setIsPlaying(true);
         u.onend = () => setIsPlaying(false);
@@ -355,13 +343,17 @@ export function useTTS() {
                 const u = new SpeechSynthesisUtterance(text);
 
                 // Apply selected voice
-                const currentVoice = selectedVoiceRef.current;
-                if (currentVoice) {
-                    u.voice = currentVoice;
+                const currentVirtualVoice = selectedVoiceRef.current;
+                const systemVoice = currentVirtualVoice?.systemVoice;
+
+                if (systemVoice) {
+                    u.voice = systemVoice;
+                    u.lang = systemVoice.lang;
+                } else {
+                    u.lang = currentVirtualVoice?.locale || 'es-ES';
                 }
 
                 u.rate = rateRef.current;
-                u.lang = currentVoice ? currentVoice.lang : 'es-ES';
 
                 // CRITICAL: Keep a reference to prevent GC on mobile
                 utterancesRef.current.push(u);

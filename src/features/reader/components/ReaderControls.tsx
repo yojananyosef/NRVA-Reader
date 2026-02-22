@@ -26,35 +26,6 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
     const [isOpen, setIsOpen] = useState(false);
     const { isPlaying, isPaused, isLoading, play, stop, setRate, voices, selectedVoice, setSelectedVoice } = useTTS();
 
-    const getCleanName = (name: string, lang: string) => {
-        let cleanName = name
-            .replace(/Microsoft /g, '')
-            .replace(/Google /g, '')
-            .replace(/Desktop /g, '')
-            .replace(/Mobile /g, '')
-            .replace(/Android /g, '')
-            .replace(/iOS /g, '')
-            .replace(/Spanish/gi, 'Español')
-            .replace(/español/gi, 'Español')
-            .replace(/\(Spain\)/gi, '(España)')
-            .replace(/\(españa\)/gi, '(España)')
-            .replace(/\(Mexico\)/gi, '(México)')
-            .replace(/\(méxico\)/gi, '(México)')
-            .replace(/\(mexico\)/gi, '(México)')
-            .replace(/ - Spanish.*/, '')
-            // Asegurar espacio antes del paréntesis
-            .replace(/(\S)\(/g, '$1 (');
-
-        if (lang === 'es-CL' && !cleanName.includes('Chile')) cleanName += ' (Chile)';
-        if (lang === 'es-MX' && !cleanName.includes('México')) cleanName += ' (México)';
-        if (lang === 'es-AR' && !cleanName.includes('Argentina')) cleanName += ' (Argentina)';
-        if (lang === 'es-ES' && !cleanName.includes('España')) cleanName += ' (España)';
-        if (lang === 'es-US' && !cleanName.includes('EE.UU.')) cleanName += ' (EE.UU.)';
-        if (lang === 'es-419' && !cleanName.includes('Latinoamérica')) cleanName += ' (Latinoamérica)';
-
-        return cleanName;
-    };
-
     const handleAutoPlay = () => {
         // Encontrar el botón de "siguiente capítulo" en el DOM si existe
         const nextBtn = document.querySelector('[data-nav-next]') as HTMLElement;
@@ -555,7 +526,7 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
 
                                                 <div className="flex-1 min-w-0 flex flex-col items-start">
                                                     <span className="font-bold text-sm truncate w-full text-left">
-                                                        {selectedVoice ? getCleanName(selectedVoice.name, selectedVoice.lang) : 'Seleccionar voz...'}
+                                                        {selectedVoice ? selectedVoice.label : 'Seleccionar voz...'}
                                                     </span>
                                                 </div>
 
@@ -570,15 +541,22 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                                                         ) : (
                                                             voices.map((voice, idx) => (
                                                                 <button
-                                                                    key={`${voice.voiceURI}-${idx}`}
+                                                                    key={`${voice.id}-${idx}`}
                                                                     onClick={() => {
                                                                         setSelectedVoice(voice);
                                                                         setIsVoiceSelectorOpen(false);
                                                                     }}
-                                                                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors text-sm ${selectedVoice?.voiceURI === voice.voiceURI ? 'bg-[var(--color-link)]/10 text-[var(--color-link)] font-bold' : 'hover:bg-[var(--surface-hover-bg)] text-[var(--color-text)] opacity-80 hover:opacity-100'}`}
+                                                                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors text-sm ${selectedVoice?.id === voice.id ? 'bg-[var(--color-link)]/10 text-[var(--color-link)] font-bold' : 'hover:bg-[var(--surface-hover-bg)] text-[var(--color-text)] opacity-80 hover:opacity-100'}`}
                                                                 >
-                                                                    <span className="truncate pr-2">{getCleanName(voice.name, voice.lang)}</span>
-                                                                    {selectedVoice?.voiceURI === voice.voiceURI && <Check className="w-4 h-4 shrink-0" />}
+                                                                    <div className="flex flex-col min-w-0 flex-1 mr-2">
+                                                                        <span className="truncate">{voice.label}</span>
+                                                                        {voice.matchType && voice.matchType !== 'exact' && (
+                                                                            <span className="text-[10px] opacity-60 font-normal truncate">
+                                                                                {voice.matchType === 'region' ? 'Acento aproximado' : 'Voz simulada (No instalada)'}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    {selectedVoice?.id === voice.id && <Check className="w-4 h-4 shrink-0" />}
                                                                 </button>
                                                             ))
                                                         )}
