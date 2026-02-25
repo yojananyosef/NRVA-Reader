@@ -7,10 +7,9 @@ import ReaderRuler from './ReaderRuler';
 import SettingsMenu from './SettingsMenu';
 import BookNavigation from './BookNavigation';
 import { useTTS } from '../../../application/reader/hooks/useTTS';
-import { parseBibleQuery, getBookSuggestions } from '../../../utils/bibleParser';
-import { lastBiblePosition } from '../../../stores/navigation';
 import { useProjectionSender } from '../../projection/hooks/useProjection';
-import { fetchBibleBook } from '../../../utils/bibleService';
+import { useAutoPlay } from '../hooks/useAutoPlay';
+import { useBookNavigation } from '../hooks/useBookNavigation';
 
 interface Book {
     code: string;
@@ -27,33 +26,7 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
     const $preferences = useStore(preferences);
     const [isOpen, setIsOpen] = useState(false);
     const { isPlaying, isPaused, isLoading, play, stop, setRate, voices, selectedVoice, setSelectedVoice } = useTTS();
-
-    const handleAutoPlay = () => {
-        // Encontrar el botón de "siguiente capítulo" en el DOM si existe
-        const nextBtn = document.querySelector('[data-nav-next]') as HTMLElement;
-        if (nextBtn) {
-            nextBtn.click();
-
-            // Re-intentar encontrar contenido para empezar a leer
-            let retries = 0;
-            const tryPlay = () => {
-                const isCommentary = window.location.pathname.includes('commentary');
-                const selector = isCommentary
-                    ? '.reader-content h1, .reader-content .reader-text'
-                    : '.reader-content h1, .reader-content p';
-
-                const elements = document.querySelectorAll(selector);
-                if (elements.length > 0) {
-                    play(selector, handleAutoPlay);
-                } else if (retries < 10) {
-                    retries++;
-                    setTimeout(tryPlay, 500);
-                }
-            };
-
-            setTimeout(tryPlay, 1000);
-        }
-    };
+    const { handleAutoPlay } = useAutoPlay(play);
 
     // Safety sync on mount to ensure hydration matches localStorage
     useEffect(() => {
@@ -89,12 +62,6 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
         setRate($preferences.speechRate);
     }, [$preferences.speechRate]);
 
-
-    const [view, setView] = useState<'settings' | 'books' | 'chapters'>('settings');
-    const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-    const [expandedSections, setExpandedSections] = useState<string[]>(['at']);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [suggestions, setSuggestions] = useState<Book[]>([]);
 
     // Voice Selector State
     const [, setIsVoiceSelectorOpen] = useState(false);
@@ -143,174 +110,27 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
 
     // Projection Hook
     const { projectVerse, openProjectionWindow, isProjecting, clearProjection } = useProjectionSender();
-    const [isProjectMode, setIsProjectMode] = useState(false);
 
-    const handleSearchInput = (value: string) => {
-        setSearchQuery(value);
-
-        // Obtener última parte de la consulta si hay múltiples pasajes
-        const parts = value.split(/[;,]/);
-        const lastPart = parts[parts.length - 1].trim();
-
-        // Solo sugerir si no hay números (es decir, aún está escribiendo el nombre del libro)
-        if (lastPart && !/\d/.test(lastPart)) {
-            const matches = getBookSuggestions(lastPart);
-            setSuggestions(matches as Book[]);
-        } else {
-            setSuggestions([]);
-        }
-    };
-
-    const applySuggestion = (bookName: string) => {
-        const parts = searchQuery.split(/[;,]/);
-        parts[parts.length - 1] = ` ${bookName} `;
-        const newQuery = parts.join(';').trim() + ' ';
-        setSearchQuery(newQuery);
-        setSuggestions([]);
-        // Enfocar el input de nuevo si es necesario
-    };
-
-    const handleSearch = async (e: any) => {
-        e.preventDefault();
-        if (!searchQuery.trim()) return;
-
-        const results = parseBibleQuery(searchQuery);
-
-        // MODO PROYECCIÓN: Si está activado, buscamos el versículo y lo enviamos
-        if (isProjectMode) {
-            if (results.length > 0 && results[0].verses) {
-                try {
-                    // Cargar el libro para obtener el texto
-                    const bookData = await fetchBibleBook(results[0].book);
-
-                    // La estructura de LocalBook es { capitulo: { "1": {...}, "2": {...} } }
-                    // No es un array, es un objeto indexado por string de número de capítulo
-                    const chapterNum = results[0].chapter.toString();
-                    const chapter = bookData.capitulo[chapterNum];
-
-                    if (chapter) {
-                        // Mapear los versículos solicitados
-                        const versesText = results[0].verses
-                            .map(verseNum => {
-                                const verse = chapter[verseNum.toString()];
-                                // Incluir número de versículo para la proyección
-                                return verse ? `<sup class="text-[0.6em] opacity-70 mr-1">${verseNum}</sup>${verse.texto || verse.text}` : null;
-                            })
-                            .filter(Boolean)
-                            .join(' ');
-
-                        if (versesText) {
-                            const ref = `${bookData.nombre || bookData.name} ${results[0].chapter}:${results[0].verses.join('-')}`;
-                            // Ya no forzamos la apertura automática para evitar recargas
-                            // El usuario debe abrir la ventana con el botón dedicado
-                            projectVerse(results[0], versesText, ref);
-
-                            // Limpiar búsqueda
-                            setSearchQuery('');
-                            setSuggestions([]);
-                        } else {
-                            alert("No se encontró el texto del versículo especificado.");
-                        }
-                    } else {
-                        alert("Capítulo no encontrado.");
-                    }
-                } catch (error) {
-                    console.error("Error fetching book for projection", error);
-                    alert("Error al cargar el libro para proyección.");
-                }
-            } else {
-                // Si no es un versículo válido (ej. solo libro o capítulo), avisar
-                alert("Para proyectar, por favor ingrese una referencia válida de versículo (ej. Juan 3:16).");
-            }
-            // IMPORTANTE: En modo proyección, NUNCA navegar en la app principal
-            return;
-        }
-
-        // MODO NORMAL DE BÚSQUEDA
-        let url = '';
-        let detail = {};
-
-        if (results.length > 0) {
-            if (results.length === 1 && !results[0].verses) {
-                // Navegación normal para un solo capítulo sin versículos específicos
-                url = `/?book=${results[0].book}&chapter=${results[0].chapter}`;
-
-                // Actualizar persistencia
-                lastBiblePosition.set({ lastBook: results[0].book, lastChapter: results[0].chapter.toString() });
-
-                detail = { book: results[0].book, chapter: results[0].chapter.toString() };
-            } else {
-                // Vista Multi-Pasaje (Logos Style)
-                const searchParam = encodeURIComponent(searchQuery);
-                url = `/?search=${searchParam}`;
-                detail = { search: searchQuery };
-            }
-        } else {
-            // Búsqueda de texto libre
-            const searchParam = encodeURIComponent(searchQuery);
-            url = `/?search=${searchParam}`;
-            detail = { search: searchQuery };
-        }
-
-        // Si estamos en la raíz (Biblia), navegación SPA
-        // Usamos window.location.pathname === '/' para asegurar que estamos en la vista de Biblia
-        if (window.location.pathname === '/') {
-            window.history.pushState({}, '', url);
-            window.dispatchEvent(new CustomEvent('app:navigate', { detail }));
-        } else {
-            // Si estamos en otra vista (ej. Comentario, Planes), forzar navegación a la Biblia
-            // Esto previene que el Comentario capture el evento app:navigate
-            window.location.href = url;
-        }
-
-        setIsOpen(false);
-    };
-
-    const toggleSection = (section: string) => {
-        setExpandedSections(prev =>
-            prev.includes(section)
-                ? prev.filter(s => s !== section)
-                : [...prev, section]
-        );
-    };
-
-    const otBooks = books.filter(b => b.section === 'at');
-    const ntBooks = books.filter(b => b.section === 'nt');
-
-    // Reset view when closing
-    useEffect(() => {
-        if (!isOpen) {
-            setTimeout(() => {
-                setView('settings');
-                setSelectedBook(null);
-                setSearchQuery('');
-                setIsProjectMode(false);
-            }, 300);
-        }
-    }, [isOpen]);
-
-    const navigateToChapter = (chapter: number) => {
-        if (selectedBook) {
-            // Siempre navegar a la vista de Biblia, independientemente de dónde estemos
-            const baseUrl = '/';
-            const url = `${baseUrl}?book=${selectedBook.code}&chapter=${chapter}`;
-
-            // Actualizar persistencia de la Biblia
-            lastBiblePosition.set({ lastBook: selectedBook.code, lastChapter: chapter.toString() });
-
-            // Si ya estamos en la vista de Biblia, navegación SPA
-            if (window.location.pathname === '/') {
-                window.history.pushState({}, '', url);
-                window.dispatchEvent(new CustomEvent('app:navigate', {
-                    detail: { url, book: selectedBook.code, chapter: String(chapter) }
-                }));
-            } else {
-                // Si estamos en otra vista (ej. Comentario, Planes), forzar navegación a la Biblia
-                window.location.href = url;
-            }
-            setIsOpen(false);
-        }
-    };
+    // Book Navigation Hook
+    const {
+        view,
+        setView,
+        selectedBook,
+        setSelectedBook,
+        expandedSections,
+        toggleSection,
+        searchQuery,
+        setSearchQuery,
+        suggestions,
+        isProjectMode,
+        setIsProjectMode,
+        handleSearchInput,
+        applySuggestion,
+        handleSearch,
+        navigateToChapter,
+        otBooks,
+        ntBooks
+    } = useBookNavigation({ books, isOpen, setIsOpen, projectVerse });
 
     return (
         <>

@@ -2,23 +2,20 @@ import { useState, useEffect, useMemo } from 'preact/hooks';
 import { BookOpen, Library, Info, EyeOff, Eye, ChevronDown, ChevronUp } from "lucide-preact";
 import booksIndex from "../../../data/books-index.json";
 import { highlights } from "../../../stores/highlights";
+import { preferences } from '../../../stores/preferences';
 import { useStore } from '@nanostores/preact';
 import VerseMenu from './VerseMenu';
 import ArrowNavigation from '../../../components/common/ArrowNavigation';
-import { getNextChapter, getPrevChapter } from '../../../utils/navigation';
 import { formatRedLetters } from '../../../utils/redLetterUtils';
-import { preferences } from '../../../stores/preferences';
-
-// Hooks de aplicación (Application Layer)
 import { useReaderParams } from '../../../application/reader/hooks/useReaderParams';
 import { useBibleData } from '../../../application/reader/hooks/useBibleData';
 import { useBibleSearch } from '../../../application/search/hooks/useBibleSearch';
 import { sanitizeHTML } from '../../../utils/security';
 import type { LocalVerse } from '../../../utils/bibleService';
 import { useVerseMenu } from '../hooks/useVerseMenu';
+import { useVerseNavigation } from '../hooks/useVerseNavigation';
 
 export default function ReaderView() {
-    // 1. Gestión de Estado de Aplicación (Hooks)
     const { params, isSearching, setParams } = useReaderParams();
     const { bookData, commentaryData, loading: bibleLoading, error: bibleError } = useBibleData(params.book, isSearching);
     const {
@@ -28,11 +25,20 @@ export default function ReaderView() {
         collapsedPassages,
         toggleCollapse
     } = useBibleSearch(params.search || "");
+    const { book: bookKey, chapter: chapterKey, verses: versesRange } = params;
 
     // 2. Estado local de UI (Presentation Layer)
     const [viewMode, setViewMode] = useState<'full' | 'partial'>('full');
-    const [activeNote, setActiveNote] = useState<string | null>(null);
     const [loading, setLoading] = useState(true); // UI Loading
+
+    const {
+        activeNote,
+        currentChapNum,
+        prevLink,
+        nextLink,
+        requiredVerses,
+        handleNavigate
+    } = useVerseNavigation(bookKey, chapterKey, versesRange, loading, setParams);
     const currentBookName = useMemo(() => {
         const bdInfo = bookData?.nombre || params.book;
         const indexInfo = booksIndex.find((b) => b.code === params.book)?.name || '';
@@ -61,64 +67,10 @@ export default function ReaderView() {
         }
     }, [bibleLoading, searchLoading, isSearching]);
 
-    useEffect(() => {
-        const handleHashChange = () => {
-            const hash = window.location.hash;
-            if (hash.startsWith('#note-') || hash.startsWith('#v-')) {
-                setActiveNote(hash.substring(1));
-            } else {
-                setActiveNote(null);
-            }
-        };
-
-        handleHashChange();
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
-    }, []);
-
-    const { book: bookKey, chapter: chapterKey, verses: versesRange } = params;
-
     const currentBookEntry = useMemo(() => {
         return booksIndex.find((b) => b.code === bookKey) || booksIndex[0];
     }, [bookKey]);
 
-
-
-
-    const safeParseInt = (s: string) => {
-        const n = parseInt(s, 10);
-        return isNaN(n) ? null : n;
-    };
-
-    const currentChapNum = safeParseInt(chapterKey) || 1;
-
-    const prevLink = useMemo(() => {
-        const target = getPrevChapter(bookKey, currentChapNum);
-        return target ? `/?book=${target.book}&chapter=${target.chapter}` : null;
-    }, [bookKey, currentChapNum]);
-
-    const nextLink = useMemo(() => {
-        const target = getNextChapter(bookKey, currentChapNum);
-        return target ? `/?book=${target.book}&chapter=${target.chapter}` : null;
-    }, [bookKey, currentChapNum]);
-
-    const parseVerseRange = (range: string): number[] => {
-        const result: number[] = [];
-        if (!range) return result;
-        const parts = range.split(",");
-        parts.forEach((part) => {
-            if (part.includes("-")) {
-                const [start, end] = part.split("-").map(Number);
-                for (let i = start; i <= end; i++) result.push(i);
-            } else {
-                const n = Number(part);
-                if (!isNaN(n)) result.push(n);
-            }
-        });
-        return result;
-    };
-
-    const requiredVerses = useMemo(() => parseVerseRange(versesRange), [versesRange]);
     const chapterData = bookData?.capitulo?.[chapterKey] || {};
 
     const processedData = useMemo(() => {
@@ -183,30 +135,6 @@ export default function ReaderView() {
     );
     const currentChapterCommentaryVerses = currentCommentaryChapter?.verses || [];
 
-    useEffect(() => {
-        if (!loading && activeNote) {
-            const scrollWithRetry = (retries = 5) => {
-                const element = document.getElementById(activeNote);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-                    setTimeout(() => {
-                        const rect = element.getBoundingClientRect();
-                        if (Math.abs(rect.top - 112) > 50) { // 112px es el scroll-mt-28
-                            const top = rect.top + window.pageYOffset - 112;
-                            window.scrollTo({ top, behavior: 'smooth' });
-                        }
-                    }, 500);
-                } else if (retries > 0) {
-                    setTimeout(() => scrollWithRetry(retries - 1), 200);
-                }
-            };
-
-            const timer = setTimeout(() => scrollWithRetry(), 100);
-            return () => clearTimeout(timer);
-        }
-    }, [loading, activeNote]);
-
     if (loading) {
         return (
             <div class="flex items-center justify-center min-h-[50vh]" role="status" aria-label="Cargando contenido">
@@ -263,7 +191,7 @@ export default function ReaderView() {
                         if (!chapterData) return null;
 
                         const bookEntry = booksIndex.find(b => b.code === result.book);
-                        const passageId = `${result.book}-${result.chapter}-${idx}`;
+                        const passageId = `${result.book} -${result.chapter} -${idx} `;
                         const isCollapsed = collapsedPassages[passageId];
 
                         // Filtrar versículos si hay un rango específico
@@ -290,7 +218,7 @@ export default function ReaderView() {
                                         {bookEntry?.name} {result.chapter}
                                         {result.verses && result.verses.length > 0 && (
                                             <span class="text-sm font-normal opacity-60">
-                                                (v. {result.verses[0]}{result.verses.length > 1 ? `-${result.verses[result.verses.length - 1]}` : ''})
+                                                (v. {result.verses[0]}{result.verses.length > 1 ? `- ${result.verses[result.verses.length - 1]} ` : ''})
                                             </span>
                                         )}
                                         <span class="opacity-0 group-hover:opacity-100 transition-opacity ml-1">
@@ -305,7 +233,7 @@ export default function ReaderView() {
                                         {(() => {
                                             return versesToRender.map(([num, content]) => {
                                                 const verseText = typeof content === "string" ? content : (content as LocalVerse).texto || "";
-                                                const verseId = `${result.book}-${result.chapter}-${num}`;
+                                                const verseId = `${result.book} -${result.chapter} -${num} `;
                                                 const isGlobalHighlighted = $highlights[verseId];
                                                 const verseNum = parseInt(num);
 
@@ -329,14 +257,14 @@ export default function ReaderView() {
                                                                 e.stopPropagation();
                                                                 handleVerseClick(e, verseId, verseText);
                                                             }}
-                                                            class={`relative p-2 -mx-2 rounded transition-all cursor-pointer verse-item group
+                                                            class={`relative p - 2 - mx - 2 rounded transition - all cursor - pointer verse - item group
                                                                 ${isGlobalHighlighted ? 'is-user-highlighted' : ''}
-                                                            `}
+`}
                                                             style={{
                                                                 color: 'var(--color-text)',
                                                                 backgroundColor: isGlobalHighlighted === true
                                                                     ? 'var(--highlight-yellow)'
-                                                                    : (typeof isGlobalHighlighted === 'string' ? `var(--highlight-${isGlobalHighlighted})` : undefined)
+                                                                    : (typeof isGlobalHighlighted === 'string' ? `var(--highlight - ${isGlobalHighlighted})` : undefined)
                                                             }}
                                                         >
                                                             <span class="verse-num inline-block font-bold mr-2 select-none align-baseline opacity-40" aria-hidden="true">
@@ -390,22 +318,6 @@ export default function ReaderView() {
     }
 
     const filteredVerses = viewMode === 'partial' ? versesList.filter(v => v.isHighlighted) : versesList;
-
-    const handleNavigate = (url: string) => {
-        const newUrl = new URL(url, window.location.origin);
-        const book = newUrl.searchParams.get('book') || 'gen';
-        const chapter = newUrl.searchParams.get('chapter') || '1';
-        const verses = newUrl.searchParams.get('verses') || '';
-
-        // Actualizar URL sin recargar
-        window.history.pushState({}, '', url);
-
-        // Actualizar estado local
-        setParams({ book, chapter, verses, search: '' });
-
-        // Hacer scroll arriba instantáneo para mejor sensación de inmediatez
-        window.scrollTo(0, 0);
-    };
 
     return (
         <article class="reader-content max-w-3xl mx-auto pb-12 px-2 md:px-0 relative animate-in fade-in duration-700">
@@ -462,7 +374,7 @@ export default function ReaderView() {
             <div class="verses space-y-4 reader-text">
                 {(() => {
                     return filteredVerses.map((verse) => {
-                        const verseId = `${bookKey}-${chapterKey}-${verse.number}`;
+                        const verseId = `${bookKey} -${chapterKey} -${verse.number} `;
                         const isGlobalHighlighted = $highlights[verseId];
                         const verseNum = parseInt(verse.number);
 
@@ -537,7 +449,7 @@ export default function ReaderView() {
             </div>
 
             {footnotes.length > 0 && (
-                <div class="mt-16 pt-8 border-t border-theme-text/20 mb-12" id="footnotes" key={`${bookKey}-${chapterKey}-footnotes`}>
+                <div class="mt-16 pt-8 border-t border-theme-text/20 mb-12" id="footnotes" key={`${bookKey} -${chapterKey} -footnotes`}>
                     <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--color-text)', opacity: 0.8 }}>
                         <BookOpen class="w-5 h-5" />
                         Notas del Capítulo ({footnotes.length})

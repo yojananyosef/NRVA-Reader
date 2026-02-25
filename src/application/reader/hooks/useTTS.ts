@@ -309,21 +309,18 @@ export function useTTS() {
                 }
 
                 const clone = element.cloneNode(true) as HTMLElement;
-                const currentPrefs = preferences.get();
 
-                if (currentPrefs.skipVerses) {
-                    clone.querySelectorAll('.verse-num, sup, .sr-only').forEach(el => {
-                        el.textContent = ' ';
-                        el.remove();
-                    });
-                }
+                // Unconditionally skip verse numbers and screen reader labels for a fluent experience
+                clone.querySelectorAll('.verse-num, sup, .sr-only').forEach(el => {
+                    el.textContent = ' ';
+                    el.remove();
+                });
 
-                if (currentPrefs.skipFootnotes) {
-                    clone.querySelectorAll('.footnote-ref, a').forEach(el => {
-                        el.textContent = ' ';
-                        el.remove();
-                    });
-                }
+                // Unconditionally skip footnotes and links for a fluent experience
+                clone.querySelectorAll('.footnote-ref, a').forEach(el => {
+                    el.textContent = ' ';
+                    el.remove();
+                });
 
                 clone.querySelectorAll('.commentary-icon, svg, button, .select-none-ui').forEach(el => {
                     el.textContent = ' ';
