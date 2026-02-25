@@ -59,7 +59,7 @@ export default function CommentaryModal({ isOpen, onClose, commentary, loading, 
                         <div class="bg-[var(--color-link)] text-white p-2 rounded-lg shadow-sm">
                             <Library size={20} />
                         </div>
-                        <h3 className="text-xl font-bold tracking-tight text-[var(--color-link)]">Comentario Bíblico</h3>
+                        <h3 className="text-xl font-bold tracking-tight text-[var(--color-link)] !m-0 leading-none">Comentario Bíblico</h3>
                     </div>
                     <div
                         onClick={onClose}

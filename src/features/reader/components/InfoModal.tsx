@@ -42,7 +42,7 @@ export default function InfoModal({ isOpen, onClose }: Props) {
             >
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b shrink-0" style={{ borderColor: "color-mix(in srgb, var(--color-text), transparent 90%)" }}>
-                    <h3 className="text-xl font-bold tracking-tight text-[var(--color-link)]">Información</h3>
+                    <h3 className="text-xl font-bold tracking-tight text-[var(--color-link)] !m-0 leading-none">Información</h3>
                     <div
                         onClick={onClose}
                         role="button"
