@@ -142,7 +142,7 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                 style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', borderColor: 'color-mix(in srgb, var(--color-text), transparent 85%)' }}
             >
                 <div className="flex items-center gap-3">
-                    <h1 className="text-xl font-bold text-[var(--color-link)] m-0" style={{ margin: 0 }}>Lectura Accesible</h1>
+                    <h1 className="text-xl font-bold text-[var(--color-link)] !m-0 leading-none">Lectura Accesible</h1>
                 </div>
                 <div className="flex gap-2">
                     <button

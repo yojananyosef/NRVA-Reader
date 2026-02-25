@@ -54,7 +54,7 @@ export default function HomeHeader({ progress }: HomeHeaderProps) {
                         {greeting.text} <span class="opacity-40 mx-1">|</span> {capitalizedDate}
                     </span>
                 </div>
-                <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-link)] font-dyslexic">
+                <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-link)] font-dyslexic !m-0 leading-none">
                     Lectura Accesible
                 </h1>
                 <p class="text-lg opacity-80 italic">
@@ -88,7 +88,7 @@ export default function HomeHeader({ progress }: HomeHeaderProps) {
                         class="absolute top-full right-0 mt-2 w-72 bg-[var(--color-bg)] border border-[var(--surface-muted-border)] rounded-xl shadow-lg p-4 z-50 animate-in fade-in zoom-in-95 duration-200"
                     >
                         <div class="flex justify-center items-center mb-4">
-                            <h3 class="font-bold text-xs text-[var(--color-text)] opacity-80 uppercase tracking-wider">Hábito diario</h3>
+                            <h3 class="font-bold text-xs text-[var(--color-text)] opacity-80 uppercase tracking-wider !m-0 leading-none">Hábito diario</h3>
                         </div>
                         <div class="space-y-4 text-sm">
                             <div class="grid grid-cols-[32px_1fr] items-center gap-3">

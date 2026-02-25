@@ -23,10 +23,10 @@ export default function HomeView() {
 
                 <div class="relative z-10">
                     <div class="flex items-center gap-3 mb-8">
-                        <div class="bg-[var(--color-link)] text-white p-2 rounded-lg shadow-sm">
-                            <span class="text-2xl">🍞</span>
+                        <div class="bg-[var(--color-link)] text-white p-2 rounded-lg shadow-sm flex items-center justify-center w-10 h-10">
+                            <span class="text-2xl leading-none">🍞</span>
                         </div>
-                        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-link)]">
+                        <h2 class="text-2xl md:text-3xl font-bold text-[var(--color-link)] !m-0 leading-none flex items-center">
                             Pan de Vida
                         </h2>
                     </div>
