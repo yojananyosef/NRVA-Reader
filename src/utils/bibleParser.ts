@@ -39,37 +39,48 @@ export function parseBibleQuery(query: string): BiblePassage[] {
     let lastBookCode: string | null = null;
 
     for (const p of passages) {
-        // Regex para capturar [Libro] [Capítulo](:[Versículos])?
-        // O solo [Capítulo](:[Versículos])? si heredamos el libro
-        const matchWithBook = p.match(/^(.+?)\s+(\d+)(?::([\d\-,]+))?$/);
-        const matchOnlyChapter = p.match(/^(\d+)(?::([\d\-,]+))?$/);
+        // Regex 1: [Libro] [Capítulo](:[Versículos])?
+        // Priorizamos la búsqueda de versículos (con ":")
+        const verseMatch = p.match(/^(.+?)\s+(\d+):([\d\-,]+)$/);
 
-        if (matchWithBook) {
-            const bookName = matchWithBook[1].toLowerCase().trim();
-            const chapter = parseInt(matchWithBook[2], 10);
-            const versesStr = matchWithBook[3];
+        // Regex 2: [Libro] [CapítuloStart](-[CapítuloEnd])?
+        // Rango de capítulos (sin ":")
+        const chapterRangeMatch = p.match(/^(.+?)\s+(\d+)(?:\s*-\s*(\d+))?$/);
 
+        // Regex 3: [Capítulo](:[Versículos])? (Solo si heredamos libro)
+        const partialVerseMatch = p.match(/^(\d+):([\d\-,]+)$/);
+        const partialChapterMatch = p.match(/^(\d+)(?:\s*-\s*(\d+))?$/);
+
+        if (verseMatch) {
+            const bookName = verseMatch[1].toLowerCase().trim();
+            const chapter = parseInt(verseMatch[2], 10);
+            const versesStr = verseMatch[3];
             const bookEntry = findBookByAnyName(bookName);
             if (bookEntry) {
                 lastBookCode = bookEntry.code;
-                const passage: BiblePassage = {
-                    book: bookEntry.code,
-                    chapter: chapter
-                };
-                if (versesStr) passage.verses = parseVerseRange(versesStr);
-                results.push(passage);
+                results.push({ book: bookEntry.code, chapter, verses: parseVerseRange(versesStr) });
             }
-        } else if (matchOnlyChapter && lastBookCode) {
-            // Caso como "juan 4, 3" donde el 3 hereda "juan"
-            const chapter = parseInt(matchOnlyChapter[1], 10);
-            const versesStr = matchOnlyChapter[2];
-
-            const passage: BiblePassage = {
-                book: lastBookCode,
-                chapter: chapter
-            };
-            if (versesStr) passage.verses = parseVerseRange(versesStr);
-            results.push(passage);
+        } else if (chapterRangeMatch) {
+            const bookName = chapterRangeMatch[1].toLowerCase().trim();
+            const chapterStart = parseInt(chapterRangeMatch[2], 10);
+            const chapterEnd = chapterRangeMatch[3] ? parseInt(chapterRangeMatch[3], 10) : chapterStart;
+            const bookEntry = findBookByAnyName(bookName);
+            if (bookEntry) {
+                lastBookCode = bookEntry.code;
+                for (let c = chapterStart; c <= chapterEnd; c++) {
+                    results.push({ book: bookEntry.code, chapter: c });
+                }
+            }
+        } else if (partialVerseMatch && lastBookCode) {
+            const chapter = parseInt(partialVerseMatch[1], 10);
+            const versesStr = partialVerseMatch[2];
+            results.push({ book: lastBookCode, chapter, verses: parseVerseRange(versesStr) });
+        } else if (partialChapterMatch && lastBookCode) {
+            const chapterStart = parseInt(partialChapterMatch[1], 10);
+            const chapterEnd = partialChapterMatch[2] ? parseInt(partialChapterMatch[2], 10) : chapterStart;
+            for (let c = chapterStart; c <= chapterEnd; c++) {
+                results.push({ book: lastBookCode, chapter: c });
+            }
         }
     }
 
