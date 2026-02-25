@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'preact/hooks';
 import { BookOpen, Library, Info, EyeOff, Eye, ChevronDown, ChevronUp } from "lucide-preact";
 import booksIndex from "../../../data/books-index.json";
-import { highlights, toggleHighlight, removeHighlight } from "../../../stores/highlights";
+import { highlights } from "../../../stores/highlights";
 import { useStore } from '@nanostores/preact';
 import VerseMenu from './VerseMenu';
 import ArrowNavigation from '../../../components/common/ArrowNavigation';
@@ -15,6 +15,7 @@ import { useBibleData } from '../../../application/reader/hooks/useBibleData';
 import { useBibleSearch } from '../../../application/search/hooks/useBibleSearch';
 import { sanitizeHTML } from '../../../utils/security';
 import type { LocalVerse } from '../../../utils/bibleService';
+import { useVerseMenu } from '../hooks/useVerseMenu';
 
 export default function ReaderView() {
     // 1. Gestión de Estado de Aplicación (Hooks)
@@ -32,85 +33,20 @@ export default function ReaderView() {
     const [viewMode, setViewMode] = useState<'full' | 'partial'>('full');
     const [activeNote, setActiveNote] = useState<string | null>(null);
     const [loading, setLoading] = useState(true); // UI Loading
-    const [menuState, setMenuState] = useState<{
-        isOpen: boolean;
-        position: { top: number; left: number };
-        verseId: string;
-        verseText: string;
-    } | null>(null);
+    const currentBookName = useMemo(() => {
+        const bdInfo = bookData?.nombre || params.book;
+        const indexInfo = booksIndex.find((b) => b.code === params.book)?.name || '';
+        return bdInfo || indexInfo;
+    }, [bookData, params.book]);
 
-    const handleVerseClick = (e: MouseEvent | KeyboardEvent, verseId: string, verseText: string) => {
-        // Prevent default only if it's not a link/button click inside the verse
-        // But the handler is on the <p>, so bubbling from children (like links) should be handled there with stopPropagation
-        // Here we just want to open the menu
-
-        // If clicking the same verse, close menu (toggle)
-        if (menuState?.isOpen && menuState.verseId === verseId) {
-            setMenuState(null);
-            return;
-        }
-
-        let position = { top: 0, left: 0 };
-        if (e instanceof MouseEvent) {
-            position = { top: e.clientY, left: e.clientX };
-        } else {
-            // Fallback for keyboard
-            const target = e.target as HTMLElement;
-            const rect = target.getBoundingClientRect();
-            position = { top: rect.top + rect.height / 2, left: rect.left + rect.width / 2 };
-        }
-
-        setMenuState({
-            isOpen: true,
-            position,
-            verseId,
-            verseText
-        });
-    };
-
-    const handleHighlight = (color: string) => {
-        if (menuState) {
-            toggleHighlight(menuState.verseId, color);
-            setMenuState(null);
-        }
-    };
-
-    const handleRemoveHighlight = () => {
-        if (menuState) {
-            removeHighlight(menuState.verseId);
-            setMenuState(null);
-        }
-    }
-
-    const handleCopy = async () => {
-        if (menuState) {
-            try {
-                const parts = menuState.verseId.split('-');
-                // Format: book-chapter-verse
-                // If book code has hyphens, we might have issues, but usually codes are 3 chars.
-                // Safest is to use the last part as verse, second to last as chapter, and the rest as book.
-                // But our ID generation is `${bookKey}-${chapterKey}-${verse.number}`
-
-                const verseNum = parts.pop();
-                const chapterNum = parts.pop();
-                // remaining parts joined is book code (though usually just one part)
-                // const bookCode = parts.join('-'); 
-
-                // Better: use the current bookData since we are in the reader for that book
-                const bookName = bookData?.nombre || params.book;
-
-                // Strip HTML tags
-                const cleanText = menuState.verseText.replace(/<[^>]*>?/gm, '');
-
-                const textToCopy = `${bookName} ${chapterNum}:${verseNum}\n${cleanText}`;
-
-                await navigator.clipboard.writeText(textToCopy);
-            } catch (err) {
-                console.error('Failed to copy', err);
-            }
-            setMenuState(null);
-        }
-    };
+    const {
+        menuState,
+        setMenuState,
+        handleVerseClick,
+        handleHighlight,
+        handleRemoveHighlight,
+        handleCopy
+    } = useVerseMenu(currentBookName);
 
     // Stores globales
     const $highlights = useStore(highlights);

@@ -1,9 +1,11 @@
 import { useStore } from '@nanostores/preact';
 import { createPortal } from 'preact/compat';
 import { useEffect, useState, useRef } from 'preact/hooks';
-import { preferences, type Theme, resetPreferences, type Preferences, PREFS_STORAGE_KEY, defaultPreferences } from '../../../stores/preferences';
-import { Settings, Type, AlignJustify, MoveHorizontal, Palette, RotateCcw, X, Sun, Moon, BookOpen, Menu, ChevronRight, Ruler, Play, Volume2, Pause, BookSearch, Search, Monitor, MonitorOff, ChevronDown, AArrowUp, Check } from 'lucide-preact';
+import { preferences, PREFS_STORAGE_KEY, defaultPreferences } from '../../../stores/preferences';
+import { Settings, X, Menu, ChevronRight, Play, Pause, BookSearch } from 'lucide-preact';
 import ReaderRuler from './ReaderRuler';
+import SettingsMenu from './SettingsMenu';
+import BookNavigation from './BookNavigation';
 import { useTTS } from '../../../application/reader/hooks/useTTS';
 import { parseBibleQuery, getBookSuggestions } from '../../../utils/bibleParser';
 import { lastBiblePosition } from '../../../stores/navigation';
@@ -87,14 +89,6 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
         setRate($preferences.speechRate);
     }, [$preferences.speechRate]);
 
-    const update = <K extends keyof Preferences>(key: K, value: Preferences[K]) => {
-        // Optimistic update
-        const newPrefs: Preferences = { ...$preferences, [key]: value } as Preferences;
-        preferences.set(newPrefs);
-
-        // Storage is handled by store subscription, but we can force it if needed
-        // applyThemeToDocument is handled by init-client script subscription
-    };
 
     const [view, setView] = useState<'settings' | 'books' | 'chapters'>('settings');
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -103,7 +97,7 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
     const [suggestions, setSuggestions] = useState<Book[]>([]);
 
     // Voice Selector State
-    const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
+    const [, setIsVoiceSelectorOpen] = useState(false);
 
     // Referencias para el control de clicks externos y z-index
     const voiceSelectorRef = useRef<HTMLDivElement>(null);
@@ -469,473 +463,39 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
 
                             {/* VIEW: SETTINGS */}
                             {view === 'settings' && (
-                                <div className="space-y-8">
-                                    {/* Accessibility Tools */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-sm font-medium opacity-80">
-                                            <Ruler className="w-4 h-4" />
-                                            <label>Herramientas de Lectura</label>
-                                        </div>
-
-                                        {/* Ruler Toggle */}
-                                        <div
-                                            className="flex items-center justify-between p-3 rounded-lg border surface-card"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Ruler className="w-5 h-5 opacity-60" />
-                                                <span className="font-medium text-sm">Guía de Lectura</span>
-                                            </div>
-                                            <div
-                                                onClick={() => update('rulerEnabled', !$preferences.rulerEnabled)}
-                                                role="switch"
-                                                aria-checked={$preferences.rulerEnabled}
-                                                tabIndex={0}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' || e.key === ' ') {
-                                                        update('rulerEnabled', !$preferences.rulerEnabled);
-                                                    }
-                                                }}
-                                                className="w-11 h-6 rounded-full transition-all duration-200 relative shadow-inner cursor-pointer"
-                                                style={{
-                                                    backgroundColor: $preferences.rulerEnabled ? 'var(--color-link)' : 'color-mix(in srgb, var(--color-text), transparent 75%)',
-                                                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)'
-                                                }}
-                                            >
-                                                <div
-                                                    className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full shadow-md transition-all duration-200 ${$preferences.rulerEnabled ? 'left-[22px]' : 'left-0.5'}`}
-                                                    style={{
-                                                        backgroundColor: 'var(--color-bg)',
-                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Voice Selection */}
-                                    <div className="space-y-4">
-                                        {/* Visual "Button" imitating CommentarySelector button */}
-                                        <div className="relative w-full" ref={voiceSelectorRef} style={{ zIndex: isVoiceSelectorOpen ? 50 : 0 }}>
-                                            <button
-                                                onClick={() => setIsVoiceSelectorOpen(!isVoiceSelectorOpen)}
-                                                className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 border relative z-10 ${isVoiceSelectorOpen
-                                                        ? 'bg-[var(--surface-active-bg)] text-[var(--color-link)] border-[var(--color-link)] shadow-md ring-1 ring-[var(--color-link)]/20'
-                                                        : '!bg-[color-mix(in_srgb,var(--surface-muted-bg)_30%,transparent)] text-[var(--color-text)] border-[var(--surface-muted-border)] hover:border-[var(--color-link)]/30 hover:shadow-md'
-                                                    }`}
-                                            >
-                                                <div className={`p-2 rounded-lg shrink-0 transition-colors ${isVoiceSelectorOpen
-                                                        ? 'bg-[var(--color-link)]/10 text-[var(--color-link)]'
-                                                        : 'bg-[var(--surface-hover-bg)] text-[var(--color-text)] opacity-70 group-hover:opacity-100 group-hover:text-[var(--color-link)]'
-                                                    }`}>
-                                                    <Volume2 className="w-5 h-5" />
-                                                </div>
-
-                                                <div className="flex-1 min-w-0 flex flex-col items-start gap-0.5">
-                                                    <span className="text-xs font-medium opacity-60 uppercase tracking-wider">Voz de lectura</span>
-                                                    <span className="font-semibold text-sm truncate w-full text-left">
-                                                        {selectedVoice ? selectedVoice.label : 'Seleccionar voz...'}
-                                                    </span>
-                                                </div>
-
-                                                <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isVoiceSelectorOpen ? 'rotate-180 text-[var(--color-link)]' : 'opacity-40'}`} />
-                                            </button>
-
-                                            {isVoiceSelectorOpen && (
-                                                <div className="absolute top-full left-0 right-0 mt-2 max-h-[300px] overflow-y-auto bg-[var(--color-bg)] border border-[var(--surface-muted-border)] rounded-xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 custom-scrollbar">
-                                                    <div className="grid grid-cols-1 gap-1">
-                                                        {voices.length === 0 ? (
-                                                            <div className="px-3 py-2 text-sm opacity-50">Cargando voces...</div>
-                                                        ) : (
-                                                            voices.map((voice, idx) => (
-                                                                <button
-                                                                    key={`${voice.id}-${idx}`}
-                                                                    onClick={() => {
-                                                                        setSelectedVoice(voice);
-                                                                        setIsVoiceSelectorOpen(false);
-                                                                    }}
-                                                                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors text-sm ${selectedVoice?.id === voice.id ? 'bg-[var(--color-link)]/10 text-[var(--color-link)] font-bold' : 'hover:bg-[var(--surface-hover-bg)] text-[var(--color-text)] opacity-80 hover:opacity-100'}`}
-                                                                >
-                                                                    <div className="flex flex-col min-w-0 flex-1 mr-2">
-                                                                        <span className="truncate">{voice.label}</span>
-                                                                        {voice.matchType && voice.matchType !== 'exact' && (
-                                                                            <span className="text-[10px] opacity-60 font-normal truncate">
-                                                                                {voice.matchType === 'region' ? 'Acento aproximado' : 'Voz simulada (No instalada)'}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                    {selectedVoice?.id === voice.id && <Check className="w-4 h-4 shrink-0" />}
-                                                                </button>
-                                                            ))
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Audio Speed */}
-                                        <div className="space-y-2 p-3 rounded-xl border border-[var(--surface-muted-border)] bg-[color-mix(in_srgb,var(--surface-muted-bg)_30%,transparent)]">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 opacity-80">
-                                                    <Play className="w-4 h-4" />
-                                                    <span className="text-xs font-medium">Velocidad</span>
-                                                </div>
-                                                <span className="text-xs font-mono px-2 py-0.5 rounded text-[var(--color-link)] font-bold" style={{ backgroundColor: 'var(--surface-muted-border)', fontSize: '11px' }}>x{$preferences.speechRate}</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min="0.5"
-                                                max="2"
-                                                step="0.1"
-                                                value={$preferences.speechRate}
-                                                onInput={(e) => update('speechRate', Number((e.target as HTMLInputElement).value))}
-                                                className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
-                                                style={{ backgroundColor: 'var(--surface-muted-border)' }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="h-px bg-[var(--surface-muted-border)] my-4 opacity-50 pointer-events-none" />
-
-                                    {/* Theme */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-sm font-medium opacity-80">
-                                            <Palette className="w-4 h-4" />
-                                            <label>Tema</label>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {[
-                                                { value: 'light', label: 'Claro', icon: Sun },
-                                                { value: 'dark', label: 'Oscuro', icon: Moon },
-                                                { value: 'sepia', label: 'Sepia', icon: BookOpen },
-                                            ].map((theme) => (
-                                                <button
-                                                    type="button"
-                                                    key={theme.value}
-                                                    onClick={() => update('theme', theme.value as Theme)}
-                                                    className="flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all cursor-pointer"
-                                                    style={{
-                                                        borderColor: $preferences.theme === theme.value ? 'var(--color-link)' : 'transparent',
-                                                        backgroundColor: $preferences.theme === theme.value ? 'color-mix(in srgb, var(--color-link), transparent 90%)' : 'color-mix(in srgb, var(--color-text), transparent 95%)',
-                                                        color: $preferences.theme === theme.value ? 'var(--color-link)' : 'var(--color-text)'
-                                                    }}
-                                                >
-                                                    <theme.icon className="w-5 h-5 mb-1" />
-                                                    <span className="text-xs font-medium">{theme.label}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="h-px bg-[var(--surface-muted-border)] my-4 opacity-50" />
-
-                                    {/* Font Family */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-sm font-medium opacity-80">
-                                            <Type className="w-4 h-4" />
-                                            <label>Fuente</label>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => update('fontFamily', 'sans')}
-                                                className="p-3 rounded-lg border-2 transition-all font-sans cursor-pointer text-center"
-                                                style={{
-                                                    borderColor: $preferences.fontFamily === 'sans' ? 'var(--color-link)' : 'transparent',
-                                                    backgroundColor: $preferences.fontFamily === 'sans' ? 'color-mix(in srgb, var(--color-link), transparent 90%)' : 'color-mix(in srgb, var(--color-text), transparent 95%)',
-                                                    color: $preferences.fontFamily === 'sans' ? 'var(--color-link)' : 'var(--color-text)'
-                                                }}
-                                            >
-                                                Arial
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => update('fontFamily', 'dyslexic')}
-                                                className="p-3 rounded-lg border-2 transition-all font-dyslexic cursor-pointer text-center"
-                                                style={{
-                                                    borderColor: $preferences.fontFamily === 'dyslexic' ? 'var(--color-link)' : 'transparent',
-                                                    backgroundColor: $preferences.fontFamily === 'dyslexic' ? 'color-mix(in srgb, var(--color-link), transparent 90%)' : 'color-mix(in srgb, var(--color-text), transparent 95%)',
-                                                    color: $preferences.fontFamily === 'dyslexic' ? 'var(--color-link)' : 'var(--color-text)'
-                                                }}
-                                            >
-                                                OpenDyslexic
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="h-px bg-[var(--surface-muted-border)] my-6 opacity-50" />
-
-                                    {/* Sliders Section */}
-                                    <div className="space-y-6">
-                                        {/* Font Size */}
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between text-sm font-medium opacity-80">
-                                                <div className="flex items-center gap-2">
-                                                    <AArrowUp className="w-4 h-4" />
-                                                    <label>Tamaño</label>
-                                                </div>
-                                                <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 90%)', fontSize: '12px', minWidth: '40px', textAlign: 'center' }}>{$preferences.fontSize}px</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min="14"
-                                                max="32"
-                                                value={$preferences.fontSize}
-                                                onInput={(e) => update('fontSize', Number((e.target as HTMLInputElement).value))}
-                                                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
-                                                style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 90%)', height: '8px' }}
-                                            />
-                                        </div>
-
-                                        {/* Line Height */}
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between text-sm font-medium opacity-80">
-                                                <div className="flex items-center gap-2">
-                                                    <AlignJustify className="w-4 h-4" />
-                                                    <label>Interlineado</label>
-                                                </div>
-                                                <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 90%)' }}>{$preferences.lineHeight}</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min="1.2"
-                                                max="2.5"
-                                                step="0.1"
-                                                value={$preferences.lineHeight}
-                                                onInput={(e) => update('lineHeight', Number((e.target as HTMLInputElement).value))}
-                                                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
-                                                style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 90%)' }}
-                                            />
-                                        </div>
-
-                                        {/* Letter Spacing */}
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between text-sm font-medium opacity-80">
-                                                <div className="flex items-center gap-2">
-                                                    <MoveHorizontal className="w-4 h-4" />
-                                                    <label>Espaciado</label>
-                                                </div>
-                                                <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 90%)' }}>{$preferences.letterSpacing}em</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="0.1"
-                                                step="0.01"
-                                                value={$preferences.letterSpacing}
-                                                onInput={(e) => update('letterSpacing', Number((e.target as HTMLInputElement).value))}
-                                                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
-                                                style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 90%)' }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
+                                <SettingsMenu
+                                    voices={voices}
+                                    selectedVoice={selectedVoice}
+                                    setSelectedVoice={setSelectedVoice}
+                                />
                             )}
 
-                            {/* VIEW: BOOKS */}
-                            {view === 'books' && (
-                                <div className="space-y-6">
-                                    {/* Bible Search System */}
-                                    <form onSubmit={handleSearch} className="mb-6 space-y-4">
-                                        <div className="flex gap-2">
-                                            <div className="relative group flex-1">
-                                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                                    <Search className="w-4 h-4 opacity-50 group-focus-within:text-[var(--color-link)] group-focus-within:opacity-100 transition-all" />
-                                                </div>
-                                                <input
-                                                    type="text"
-                                                    value={searchQuery}
-                                                    onInput={(e) => handleSearchInput((e.target as HTMLInputElement).value)}
-                                                    placeholder={isProjectMode ? "Proyectar versículo (ej. Juan 3:16)" : "Buscar..."}
-                                                    className="w-full pl-10 pr-4 py-3 rounded-xl border text-sm transition-all focus:ring-2 focus:ring-[var(--color-link)] outline-none"
-                                                    style={{
-                                                        backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 95%)',
-                                                        borderColor: 'color-mix(in srgb, var(--color-text), transparent 90%)'
-                                                    }}
-                                                />
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (isProjecting && isProjectMode) {
-                                                        clearProjection();
-                                                    } else {
-                                                        setIsProjectMode(!isProjectMode);
-                                                    }
-                                                }}
-                                                className={`hidden md:flex p-3 rounded-xl border transition-all items-center justify-center ${isProjectMode ? 'bg-[var(--color-link)] text-white' : 'hover:bg-[var(--surface-hover-bg)]'}`}
-                                                title={isProjectMode ? "Modo Proyección Activado" : "Activar Modo Proyección"}
-                                            >
-                                                {isProjectMode ? <Monitor className="w-5 h-5" /> : <MonitorOff className="w-5 h-5 opacity-50" />}
-                                            </button>
-                                        </div>
-
-                                        {isProjectMode && (
-                                            <div className="space-y-2 hidden md:block">
-                                                <div className="text-xs px-3 py-2 rounded-lg bg-[var(--color-link)]/10 text-[var(--color-link)] border border-[var(--color-link)]/20 flex items-center gap-2">
-                                                    <Monitor className="w-3 h-3" />
-                                                    <span>Modo Proyección: Busca un versículo para mostrarlo.</span>
-                                                </div>
-                                                {!isProjecting && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={openProjectionWindow}
-                                                        className="w-full text-xs py-2 rounded-lg border border-[var(--color-link)] text-[var(--color-link)] hover:bg-[var(--color-link)]/10 transition-colors flex items-center justify-center gap-2 font-medium"
-                                                    >
-                                                        <Monitor className="w-3 h-3" />
-                                                        Abrir Ventana de Proyección
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Sugerencias Autocomplete */}
-                                        {suggestions.length > 0 && (
-                                            <div
-                                                className="mt-2 rounded-xl border shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 relative"
-                                                style={{
-                                                    backgroundColor: 'var(--color-bg)',
-                                                    borderColor: 'color-mix(in srgb, var(--color-text), transparent 90%)'
-                                                }}
-                                            >
-                                                {suggestions.map((book) => (
-                                                    <div
-                                                        key={book.code}
-                                                        onClick={() => applySuggestion(book.name)}
-                                                        className="px-4 py-3 text-sm cursor-pointer hover:bg-[var(--color-link)] hover:text-white transition-colors flex items-center justify-between group"
-                                                    >
-                                                        <span className="font-medium">{book.name}</span>
-                                                        <span className="text-[10px] opacity-50 group-hover:opacity-100 uppercase tracking-tighter">{book.code}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </form>
-
-                                    {/* Antiguo Testamento */}
-                                    <div className="space-y-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleSection('at')}
-                                            className="flex w-full items-center justify-between p-3 rounded-lg hover:bg-[var(--surface-hover-bg)] transition-colors cursor-pointer border border-transparent"
-                                            style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 95%)' }}
-                                        >
-                                            <span className="font-bold text-sm uppercase tracking-wider">Antiguo Testamento</span>
-                                            <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${expandedSections.includes('at') ? 'rotate-90' : ''}`} />
-                                        </button>
-                                        {expandedSections.includes('at') && (
-                                            <div className="grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                                                {otBooks.map((book) => (
-                                                    <button
-                                                        type="button"
-                                                        key={book.code}
-                                                        onClick={() => {
-                                                            setSelectedBook(book);
-                                                            setView('chapters');
-                                                        }}
-                                                        className="w-full text-left p-3 rounded-lg flex items-center justify-between group transition-colors cursor-pointer hover:bg-[var(--surface-hover-bg)]"
-                                                    >
-                                                        <span className="font-medium">{book.name}</span>
-                                                        <ChevronRight className="w-4 h-4 opacity-40 group-hover:opacity-60" />
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Nuevo Testamento */}
-                                    <div className="space-y-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleSection('nt')}
-                                            className="flex w-full items-center justify-between p-3 rounded-lg hover:bg-[var(--surface-hover-bg)] transition-colors cursor-pointer border border-transparent"
-                                            style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 95%)' }}
-                                        >
-                                            <span className="font-bold text-sm uppercase tracking-wider">Nuevo Testamento</span>
-                                            <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${expandedSections.includes('nt') ? 'rotate-90' : ''}`} />
-                                        </button>
-                                        {expandedSections.includes('nt') && (
-                                            <div className="grid grid-cols-1 gap-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                                                {ntBooks.map((book) => (
-                                                    <button
-                                                        type="button"
-                                                        key={book.code}
-                                                        onClick={() => {
-                                                            setSelectedBook(book);
-                                                            setView('chapters');
-                                                        }}
-                                                        className="w-full text-left p-3 rounded-lg flex items-center justify-between group transition-colors cursor-pointer hover:bg-[var(--surface-hover-bg)]"
-                                                    >
-                                                        <span className="font-medium">{book.name}</span>
-                                                        <ChevronRight className="w-4 h-4 opacity-40 group-hover:opacity-60" />
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                            {/* VIEW: BOOKS OR CHAPTERS */}
+                            {(view === 'books' || view === 'chapters') && (
+                                <BookNavigation
+                                    view={view}
+                                    setView={setView}
+                                    searchQuery={searchQuery}
+                                    handleSearchInput={handleSearchInput}
+                                    isProjectMode={isProjectMode}
+                                    setIsProjectMode={setIsProjectMode}
+                                    isProjecting={isProjecting}
+                                    clearProjection={clearProjection}
+                                    openProjectionWindow={openProjectionWindow}
+                                    suggestions={suggestions}
+                                    applySuggestion={applySuggestion}
+                                    handleSearch={handleSearch}
+                                    otBooks={otBooks}
+                                    ntBooks={ntBooks}
+                                    expandedSections={expandedSections}
+                                    toggleSection={toggleSection}
+                                    selectedBook={selectedBook}
+                                    setSelectedBook={setSelectedBook}
+                                    setSearchQuery={setSearchQuery}
+                                    navigateToChapter={navigateToChapter}
+                                />
                             )}
-
-                            {/* VIEW: CHAPTERS */}
-                            {view === 'chapters' && selectedBook && (
-                                <div className="space-y-4">
-                                    {isProjectMode && (
-                                        <div className="text-xs px-3 py-2 rounded-lg bg-[var(--color-link)]/10 text-[var(--color-link)] border border-[var(--color-link)]/20 hidden md:flex items-center gap-2">
-                                            <Monitor className="w-3 h-3" />
-                                            <span>Selecciona un capítulo para proyectar el versículo 1 (por defecto) o buscar.</span>
-                                        </div>
-                                    )}
-                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                                        {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map((chapter) => (
-                                            <button
-                                                type="button"
-                                                key={chapter}
-                                                onClick={() => {
-                                                    if (isProjectMode) {
-                                                        // En modo proyección, al seleccionar capítulo, podríamos:
-                                                        // 1. Proyectar el capítulo 1:1
-                                                        // 2. O simplemente navegar ahí para que el usuario seleccione el versículo después (pero eso requiere UI de versículos aquí)
-                                                        // Para simplificar, autocompletamos la búsqueda con "Libro Capitulo"
-                                                        setSearchQuery(`${selectedBook.name} ${chapter}:1`);
-                                                        setView('books'); // Volver a la búsqueda
-                                                        // Opcionalmente auto-buscar
-                                                    } else {
-                                                        navigateToChapter(chapter);
-                                                    }
-                                                }}
-                                                className="p-3 rounded-lg font-medium text-center transition-colors cursor-pointer"
-                                                style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 95%)' }}
-                                                onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'color-mix(in srgb, var(--color-text), transparent 90%)'}
-                                                onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'color-mix(in srgb, var(--color-text), transparent 95%)'}
-                                            >
-                                                {chapter}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
                         </div>
-
-                        {/* Footer - Only settings */}
-                        {view === 'settings' && (
-                            <div
-                                className="p-6 border-t"
-                                style={{
-                                    borderColor: 'color-mix(in srgb, var(--color-text), transparent 90%)',
-                                    backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 95%)'
-                                }}
-                            >
-                                <button
-                                    type="button"
-                                    onClick={resetPreferences}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 font-bold rounded-lg hover:opacity-90 transition-opacity shadow-sm cursor-pointer"
-                                    style={{ backgroundColor: 'var(--color-text)', color: 'var(--color-bg)' }}
-                                >
-                                    <RotateCcw className="w-4 h-4" />
-                                    Restaurar valores
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </div>,
                 document.body
