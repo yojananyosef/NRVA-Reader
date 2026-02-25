@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { fetchBibleBook } from '../../../utils/bibleService';
+import { fetchWithCache } from '../../../utils/fetchWithCache';
 import booksIndex from '../../../data/books-index.json';
 
 interface DailyVerse {
@@ -58,7 +59,7 @@ export function useDailyVerse() {
         try {
             const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
             let attempts = 0;
-            const maxAttempts = 10;
+            const maxAttempts = 30; // Increased attempts to find one with commentary
 
             while (attempts < maxAttempts) {
                 // 1. Pick random book
@@ -67,25 +68,41 @@ export function useDailyVerse() {
                 // 2. Pick random chapter
                 const randomChapter = Math.floor(Math.random() * randomBook.chapters) + 1;
 
-                // 3. Fetch book data to get verses count/content
-                // We need to fetch the book to know how many verses are in the chapter and get the text
-                const bookData = await fetchBibleBook(randomBook.code);
+                // 3. Check if commentary exists for this book/chapter
+                const commentaryData = await fetchWithCache<any>(`/data/commentary/${randomBook.code}.json`);
+                if (!commentaryData || !commentaryData.chapters) {
+                    attempts++;
+                    continue;
+                }
 
+                const chapterCommentary = commentaryData.chapters.find((c: any) => c.chapter === randomChapter);
+                if (!chapterCommentary || !chapterCommentary.verses || chapterCommentary.verses.length === 0) {
+                    attempts++;
+                    continue;
+                }
+
+                // Get list of verses that have commentary in this chapter
+                const versesWithCommentary = chapterCommentary.verses.map((v: any) => v.verse.toString());
+
+                // 4. Fetch book data to get the text
+                const bookData = await fetchBibleBook(randomBook.code);
                 if (!bookData || !bookData.capitulo || !bookData.capitulo[randomChapter]) {
                     attempts++;
                     continue;
                 }
 
                 const chapterData = bookData.capitulo[randomChapter];
-                const verses = Object.keys(chapterData);
 
-                if (verses.length === 0) {
+                // Intersection between available verses in book and verses with commentary
+                const availableVerses = Object.keys(chapterData).filter(v => versesWithCommentary.includes(v));
+
+                if (availableVerses.length === 0) {
                     attempts++;
                     continue;
                 }
 
-                // 4. Pick random verse
-                const randomVerseNum = verses[Math.floor(Math.random() * verses.length)];
+                // 5. Pick random verse from those with commentary
+                const randomVerseNum = availableVerses[Math.floor(Math.random() * availableVerses.length)];
                 const verseContent = chapterData[randomVerseNum];
 
                 const verseText = typeof verseContent === 'string'
@@ -121,7 +138,7 @@ export function useDailyVerse() {
                 return;
             }
 
-            throw new Error('Failed to generate unique verse after multiple attempts');
+            throw new Error('Failed to generate unique verse with commentary after multiple attempts');
         } catch (err) {
             console.error('Error generating verse:', err);
             setError('Error generando nuevo versículo');
