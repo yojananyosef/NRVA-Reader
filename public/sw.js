@@ -1,4 +1,7 @@
-const CACHE_NAME = 'astro-reader-app-v4';
+const CACHE_NAME_HTML = 'astro-reader-html-v5';
+const CACHE_NAME_ASSETS = 'astro-reader-assets-v5';
+const CACHE_NAME_IMMUTABLE = 'astro-reader-immutable-v5'; // audio and data
+
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
@@ -6,23 +9,22 @@ const ASSETS_TO_CACHE = [
   '/pwa-icon.svg'
 ];
 
-// Install Event: Cache App Shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
+    caches.open(CACHE_NAME_HTML).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
   self.skipWaiting();
 });
 
-// Activate Event: Clean up old caches
 self.addEventListener('activate', (event) => {
+  const currentCaches = [CACHE_NAME_HTML, CACHE_NAME_ASSETS, CACHE_NAME_IMMUTABLE];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName.startsWith('astro-reader-app-')) {
+          if (!currentCaches.includes(cacheName) && cacheName.startsWith('astro-reader-')) {
             return caches.delete(cacheName);
           }
         })
@@ -32,48 +34,68 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch Event: Network First for HTML, Cache First for Assets
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Ignore data requests (handled by fetchWithCache.ts) and non-GET requests
-  if (url.pathname.endsWith('.json') || event.request.method !== 'GET') {
+  if (event.request.method !== 'GET' || url.pathname.endsWith('.json')) {
     return;
   }
 
-  // HTML Navigation: Network First -> Cache Fallback
+  // 1. IMMUTABLE FILES: CACHE-FIRST (Audio, Data, Fonts)
+  // These files are heavy and they never mutate
+  if (url.pathname.startsWith('/audio/') || url.pathname.startsWith('/data/') || url.pathname.startsWith('/fonts/')) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(event.request).then((response) => {
+          if (!response || response.status !== 200 || response.type !== 'basic') return response;
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME_IMMUTABLE).then((cache) => cache.put(event.request, responseToCache));
+          return response;
+        }).catch(() => {
+          // If offline and not in cache, let it fail natively
+        });
+      })
+    );
+    return;
+  }
+
+  // 2. HTML NAVIGATION: NETWORK FIRST, FALLBACK TO CACHE
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
+        .then((response) => {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME_HTML).then((cache) => cache.put(event.request, responseToCache));
+          return response;
+        })
         .catch(() => {
-          return caches.match('/');
+          return caches.match(event.request).then((cachedResponse) => {
+            return cachedResponse || caches.match('/'); // Return app shell
+          });
         })
     );
     return;
   }
 
-  // Static Assets (JS, CSS, Images): Cache First -> Network -> Cache Update
+  // 3. JS, CSS, IMAGES, OTHERS: STALE-WHILE-REVALIDATE
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(event.request).then((response) => {
-        // Check if we received a valid response
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-
-        // Clone the response
-        const responseToCache = response.clone();
-
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+      const fetchPromise = fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const cacheCopy = networkResponse.clone();
+            caches.open(CACHE_NAME_ASSETS).then((cache) => cache.put(event.request, cacheCopy));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Silent catch for offline gracefully failing
         });
 
-        return response;
-      });
+      return cachedResponse || fetchPromise;
     })
   );
 });
