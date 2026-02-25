@@ -82,6 +82,10 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
                 <div className="space-y-4">
                     <div className="relative w-full" ref={voiceSelectorRef} style={{ zIndex: isVoiceSelectorOpen ? 50 : 0 }}>
                         <button
+                            type="button"
+                            aria-expanded={isVoiceSelectorOpen}
+                            aria-haspopup="listbox"
+                            aria-controls="voice-options"
                             onClick={() => setIsVoiceSelectorOpen(!isVoiceSelectorOpen)}
                             className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 border relative z-10 ${isVoiceSelectorOpen
                                 ? 'bg-[var(--surface-active-bg)] text-[var(--color-link)] border-[var(--color-link)] shadow-md ring-1 ring-[var(--color-link)]/20'
@@ -107,12 +111,15 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
 
                         {isVoiceSelectorOpen && (
                             <div className="absolute top-full left-0 right-0 mt-2 max-h-[300px] overflow-y-auto bg-[var(--color-bg)] border border-[var(--surface-muted-border)] rounded-xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 custom-scrollbar">
-                                <div className="grid grid-cols-1 gap-1">
+                                <div id="voice-options" role="listbox" className="grid grid-cols-1 gap-1">
                                     {voices.length === 0 ? (
                                         <div className="px-3 py-2 text-sm opacity-50">Cargando voces...</div>
                                     ) : (
                                         voices.map((voice, idx) => (
                                             <button
+                                                type="button"
+                                                role="option"
+                                                aria-selected={selectedVoice?.id === voice.id}
                                                 key={`${voice.id}-${idx}`}
                                                 onClick={() => {
                                                     setSelectedVoice(voice);
@@ -152,6 +159,7 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
                             max="2"
                             step="0.1"
                             value={$preferences.speechRate}
+                            aria-label="Ajustar velocidad de audio"
                             onInput={(e) => update('speechRate', Number((e.target as HTMLInputElement).value))}
                             className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
                             style={{ backgroundColor: 'var(--surface-muted-border)' }}
@@ -176,6 +184,8 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
                             <button
                                 type="button"
                                 key={theme.value}
+                                aria-label={`Cambiar a tema ${theme.label}`}
+                                aria-pressed={$preferences.theme === theme.value}
                                 onClick={() => update('theme', theme.value as Theme)}
                                 className="flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all cursor-pointer"
                                 style={{
@@ -202,6 +212,8 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
                     <div className="grid grid-cols-2 gap-2">
                         <button
                             type="button"
+                            aria-label="Usar fuente Arial"
+                            aria-pressed={$preferences.fontFamily === 'sans'}
                             onClick={() => update('fontFamily', 'sans')}
                             className="p-3 rounded-lg border-2 transition-all font-sans cursor-pointer text-center"
                             style={{
@@ -214,6 +226,8 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
                         </button>
                         <button
                             type="button"
+                            aria-label="Usar fuente Open Dyslexic"
+                            aria-pressed={$preferences.fontFamily === 'dyslexic'}
                             onClick={() => update('fontFamily', 'dyslexic')}
                             className="p-3 rounded-lg border-2 transition-all font-dyslexic cursor-pointer text-center"
                             style={{
@@ -245,6 +259,7 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
                             min="14"
                             max="32"
                             value={$preferences.fontSize}
+                            aria-label="Ajustar tamaño de fuente de los versículos"
                             onInput={(e) => update('fontSize', Number((e.target as HTMLInputElement).value))}
                             className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
                             style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 90%)', height: '8px' }}
@@ -266,6 +281,7 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
                             max="2.5"
                             step="0.1"
                             value={$preferences.lineHeight}
+                            aria-label="Ajustar interlineado"
                             onInput={(e) => update('lineHeight', Number((e.target as HTMLInputElement).value))}
                             className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
                             style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 90%)' }}
@@ -287,6 +303,7 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
                             max="0.1"
                             step="0.01"
                             value={$preferences.letterSpacing}
+                            aria-label="Ajustar espaciado entre letras"
                             onInput={(e) => update('letterSpacing', Number((e.target as HTMLInputElement).value))}
                             className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[var(--color-link)]"
                             style={{ backgroundColor: 'color-mix(in srgb, var(--color-text), transparent 90%)' }}

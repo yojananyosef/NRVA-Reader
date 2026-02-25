@@ -153,6 +153,8 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                         className="h-11 w-11 p-0 shrink-0 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors flex md:hidden items-center justify-center cursor-pointer bg-transparent border-none"
                         style={{ padding: 0, width: '44px', height: '44px', minWidth: '44px' }}
                         aria-label="Alternar menú lateral"
+                        aria-expanded={isOpen}
+                        aria-controls="reader-sidebar"
                         type="button"
                     >
                         <Menu className="w-6 h-6" />
@@ -196,6 +198,8 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                         className="h-11 w-11 p-0 shrink-0 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors flex items-center justify-center cursor-pointer bg-transparent border-none"
                         style={{ padding: 0, width: '44px', height: '44px', minWidth: '44px' }}
                         aria-label="Abrir navegación de libros"
+                        aria-expanded={isOpen && view === 'books'}
+                        aria-controls="reader-sidebar"
                         type="button"
                     >
                         <BookSearch className="w-6 h-6" />
@@ -209,6 +213,8 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
                         className="h-11 w-11 p-0 shrink-0 rounded-md hover:bg-[var(--surface-hover-bg)] text-[var(--color-link)] transition-colors flex items-center justify-center cursor-pointer bg-transparent border-none"
                         style={{ padding: 0, width: '44px', height: '44px', minWidth: '44px' }}
                         aria-label="Abrir configuración"
+                        aria-expanded={isOpen && view === 'settings'}
+                        aria-controls="reader-sidebar"
                         type="button"
                     >
                         <Settings className="w-6 h-6" />
@@ -231,6 +237,10 @@ export default function ReaderControls({ books = [] }: ReaderControlsProps) {
 
                     {/* Panel */}
                     <div
+                        id="reader-sidebar"
+                        role="dialog"
+                        aria-modal={isOpen}
+                        aria-label="Panel de opciones"
                         className={`absolute right-0 top-0 bottom-0 w-[85%] sm:w-full sm:max-w-sm border-l border-theme-text/10 shadow-2xl transform transition-transform duration-300 flex flex-col ui-protect z-[2147483647] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
                         style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }}
                     >

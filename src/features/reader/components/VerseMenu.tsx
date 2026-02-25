@@ -70,6 +70,7 @@ export default function VerseMenu({
                 maxWidth: '95vw'
             }}
             role="dialog"
+            aria-modal="true"
             aria-label="Opciones de versículo"
         >
             <div className="flex items-center gap-1 border-r border-[var(--surface-muted-border)] pr-2 mr-2">
