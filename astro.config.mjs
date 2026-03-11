@@ -3,7 +3,7 @@ import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel/serverless';
 
 export default defineConfig({
   site: 'https://accessible-reading.vercel.app',
@@ -31,7 +31,5 @@ export default defineConfig({
     }
   },
 
-  adapter: node({
-    mode: 'standalone'
-  })
+  adapter: vercel()
 });
