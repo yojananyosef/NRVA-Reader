@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { useStore } from "@nanostores/preact";
-import { BookOpen, Menu, ChevronRight, Bookmark, Star, ChevronLeft, Library, X, Languages, BookText, Info, Home } from "lucide-preact";
+import { BookOpen, Menu, ChevronRight, Bookmark, Star, ChevronLeft, Library, X, Languages, BookText, Info, Home, Search } from "lucide-preact";
 import InfoModal from "./InfoModal";
 import { lastBiblePosition, lastCommentaryPosition, lastInterlinearPosition } from "../../../stores/navigation";
 
@@ -34,6 +34,7 @@ export default function SidebarNav({ showTrigger = false, mode = "inline" }: Pro
     if (path.includes("/plans")) return "plans";
     if (path.includes("/commentary")) return "commentary";
     if (path.includes("/interlinear")) return "interlinear";
+    if (path.includes("/concordancia")) return "concordancia";
     if (path.includes("/strong")) {
       const params = new URLSearchParams(search);
       const type = params.get("type");
@@ -81,6 +82,7 @@ export default function SidebarNav({ showTrigger = false, mode = "inline" }: Pro
     },
     { id: "tracking", label: "Seguimiento", icon: Bookmark, url: "/tracker" },
     { id: "plans", label: "Planes", icon: Star, url: "/plans" },
+    { id: "concordancia", label: "Concordancia", icon: Search, url: "/concordancia" },
   ];
 
   useEffect(() => {
