@@ -55,7 +55,7 @@ export default function HomeHeader({ progress }: HomeHeaderProps) {
                     </span>
                 </div>
                 <h1 class="text-3xl md:text-4xl font-bold text-[var(--color-link)] font-dyslexic !m-0 leading-none">
-                    Lectura Accesible
+                    NRVA Reader
                 </h1>
                 <p class="text-lg opacity-80 italic">
                     Tu compañero diario para el estudio bíblico

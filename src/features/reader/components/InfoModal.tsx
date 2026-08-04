@@ -90,10 +90,10 @@ export default function InfoModal({ isOpen, onClose }: Props) {
 
                     {/* Presentación */}
                     <section className="space-y-4">
-                        <h4 className="text-lg font-bold border-l-4 border-[var(--color-link)] pl-3">Lectura Accesible</h4>
+                        <h4 className="text-lg font-bold border-l-4 border-[var(--color-link)] pl-3">NRVA Reader</h4>
                         <div className="space-y-3 opacity-90 leading-relaxed">
                             <p>
-                                <strong>Lectura Accesible</strong> es una plataforma dedicada al estudio profundo y reverente de las Sagradas Escrituras. Nuestro compromiso es facilitar el acceso a la Palabra de Dios mediante herramientas tecnológicas que promuevan la comprensión del texto bíblico en sus idiomas originales y el crecimiento espiritual fundamentado en la verdad revelada.
+                                <strong>NRVA Reader</strong> es la plataforma oficial de lectura y estudio profundo impulsada por la versión <strong>Nueva Reina Valera Accesible (NRVA)</strong>. Nuestro compromiso es facilitar el acceso a la Palabra de Dios mediante herramientas tecnológicas inclusivas que promuevan la comprensión del texto bíblico en sus idiomas originales y el crecimiento espiritual fundamentado en la verdad revelada.
                             </p>
                             <p>
                                 Este proyecto ofrece una Biblia interlineal completa (Español, Hebreo y Griego) con herramientas de análisis morfológico y códigos Strong, permitiendo a cada estudiante de la Biblia explorar las riquezas del texto sagrado con precisión. Además, integra el <strong>Comentario Bíblico Adventista (CBA)</strong> para enriquecer el estudio con una perspectiva teológica sólida y equilibrada.
@@ -156,8 +156,8 @@ export default function InfoModal({ isOpen, onClose }: Props) {
                         <div className="space-y-4 opacity-90 text-sm">
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="p-4 rounded-lg border surface-card">
-                                    <h5 className="font-bold mb-1 text-[var(--color-link)]">Biblia Libre</h5>
-                                    <p className="text-xs">Versión adaptada para una lectura clara y contemporánea.</p>
+                                    <h5 className="font-bold mb-1 text-[var(--color-link)]">Nueva Reina Valera Accesible (NRVA)</h5>
+                                    <p className="text-xs">Versión bíblica accesible adaptada para una lectura clara, inclusiva y contemporánea.</p>
                                 </div>
 
                                 <div className="p-4 rounded-lg border surface-card">

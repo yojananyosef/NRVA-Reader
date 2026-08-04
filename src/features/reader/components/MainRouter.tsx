@@ -24,7 +24,7 @@ export default function MainRouter() {
             setSearchString(window.location.search);
 
             if (!hasBook && !hasSearch) {
-                document.title = "Inicio - Lectura Accesible";
+                document.title = "Inicio - NRVA Reader";
             }
         };
 
