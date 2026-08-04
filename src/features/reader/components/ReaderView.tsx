@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'preact/hooks';
+import { useState, useEffect, useMemo, useRef } from 'preact/hooks';
 import { BookOpen, Library, Info, EyeOff, Eye, ChevronDown, ChevronUp } from "lucide-preact";
 import booksIndex from "../../../data/books-index.json";
 import { highlights } from "../../../stores/highlights";
@@ -122,7 +122,7 @@ export default function ReaderView() {
             preferences.set({ ...$preferences, rulerEnabled: !$preferences.rulerEnabled });
         },
         onCloseModal: () => {
-            if (menuState.isOpen) setMenuState({ isOpen: false, verseNumber: 0, verseText: '', position: { top: 0, left: 0 } });
+            if (menuState?.isOpen) setMenuState(null);
         },
         enabled: true
     });
