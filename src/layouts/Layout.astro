@@ -2,10 +2,32 @@
 <html lang="es">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/svg+xml" href="/pwa-icon.svg" />
+		<link rel="preload" href="/fonts/OpenDyslexic-Regular.woff" as="font" type="font/woff" crossorigin="anonymous" fetchpriority="high" />
 		<meta name="generator" content={Astro.generator} />
-		<title>{Astro.props.title || "Lectura Accesible"}</title>
+		<title>{Astro.props.title || "Lectura Accesible - Plataforma de Estudio Bíblico Inclusivo"}</title>
+		
+		<!-- Schema.org JSON-LD Accessibility & Book Metadata -->
+		<script type="application/ld+json" is:inline>
+		{
+			"@context": "https://schema.org",
+			"@type": "Book",
+			"name": "Plataforma de Lectura Bíblica Accesible",
+			"inLanguage": "es",
+			"bookFormat": "https://schema.org/EBook",
+			"accessibilityFeature": [
+				"readingOrder",
+				"structuralNavigation",
+				"displayTransformability",
+				"dyslexiaReadability",
+				"highContrastDisplay",
+				"ttsTextToSpeech"
+			],
+			"accessibilitySummary": "Plataforma web neurocognitiva optimizada para dislexia y estrés visual con espaciado anti-crowding, tipografía personalizable y lectura por voz."
+		}
+		</script>
+
 		<script is:inline>
 			// Disable right-click context menu globally
 			document.addEventListener("contextmenu", (e) => {
@@ -21,7 +43,16 @@
 		</script>
 	</head>
 	<body oncontextmenu="return false;">
-		<slot />
+		<!-- Skip to Content for Keyboard & Screen Reader Accessibility -->
+		<a
+			href="#main-content"
+			class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-[var(--color-link)] focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none"
+		>
+			Saltar al contenido principal
+		</a>
+		<main id="main-content" tabindex="-1" class="w-full h-full outline-none">
+			<slot />
+		</main>
 	</body>
 </html>
 

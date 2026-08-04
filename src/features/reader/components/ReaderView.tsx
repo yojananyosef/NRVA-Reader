@@ -83,6 +83,37 @@ export default function ReaderView() {
         }
     }, [$preferences.theme]);
 
+    // Scroll-Anchoring Mechanism for Preference Changes (font size, line height, spacing)
+    const isFirstRender = useRef(true);
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
+        const verseElements = Array.from(document.querySelectorAll('.verse-item'));
+        if (verseElements.length === 0) return;
+
+        const viewportCenter = window.innerHeight / 2;
+        let closestVerse: Element | null = null;
+        let smallestDistance = Infinity;
+
+        for (const el of verseElements) {
+            const rect = el.getBoundingClientRect();
+            const distance = Math.abs(rect.top + rect.height / 2 - viewportCenter);
+            if (distance < smallestDistance) {
+                smallestDistance = distance;
+                closestVerse = el;
+            }
+        }
+
+        if (closestVerse) {
+            requestAnimationFrame(() => {
+                closestVerse?.scrollIntoView({ block: 'center', behavior: 'instant' as any });
+            });
+        }
+    }, [$preferences.fontSize, $preferences.lineHeight, $preferences.letterSpacing, $preferences.fontFamily]);
+
     // Keyboard navigation shortcuts
     useKeyboardShortcuts({
         onNextChapter: nextLink ? () => handleNavigate(nextLink) : undefined,
