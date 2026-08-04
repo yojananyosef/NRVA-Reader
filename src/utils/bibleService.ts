@@ -52,6 +52,124 @@ const BOOK_MAPPING: Record<string, string> = {
     'jud': 'JUD'
 };
 
+const OSIS_MAPPING: Record<string, string> = {
+    'gen': 'Gen',
+    'exo': 'Exod',
+    'lev': 'Lev',
+    'num': 'Num',
+    'deu': 'Deut',
+    'jos': 'Josh',
+    'jdg': 'Judg',
+    'rut': 'Ruth',
+    '1sa': '1Sam',
+    '2sa': '2Sam',
+    '1ki': '1Kgs',
+    '2ki': '2Kgs',
+    '1ch': '1Chr',
+    '2ch': '2Chr',
+    'ezr': 'Ezra',
+    'neh': 'Neh',
+    'est': 'Esth',
+    'job': 'Job',
+    'psa': 'Ps',
+    'pro': 'Prov',
+    'ecc': 'Eccl',
+    'sol': 'Song',
+    'isa': 'Isa',
+    'jer': 'Jer',
+    'lam': 'Lam',
+    'eze': 'Ezek',
+    'dan': 'Dan',
+    'hos': 'Hos',
+    'joe': 'Joel',
+    'amo': 'Amos',
+    'oba': 'Obad',
+    'jon': 'Jonah',
+    'mic': 'Mic',
+    'nah': 'Nah',
+    'hab': 'Hab',
+    'zep': 'Zeph',
+    'hag': 'Hag',
+    'zec': 'Zech',
+    'mal': 'Mal',
+    'mat': 'Matt',
+    'mrk': 'Mark',
+    'luk': 'Luke',
+    'jhn': 'John',
+    'act': 'Acts',
+    'rom': 'Rom',
+    '1co': '1Cor',
+    '2co': '2Cor',
+    'gal': 'Gal',
+    'eph': 'Eph',
+    'phi': 'Phil',
+    'col': 'Col',
+    '1th': '1Thess',
+    '2th': '2Thess',
+    '1ti': '1Tim',
+    '2ti': '2Tim',
+    'tit': 'Titus',
+    'phm': 'Phlm',
+    'heb': 'Heb',
+    'jam': 'Jas',
+    '1pe': '1Pet',
+    '2pe': '2Pet',
+    '1jo': '1John',
+    '2jo': '2John',
+    '3jo': '3John',
+    'jud': 'Jude',
+    'rev': 'Rev'
+};
+
+let cachedHeadersData: any = null;
+
+async function fetchHeadersData(): Promise<any> {
+    if (cachedHeadersData) return cachedHeadersData;
+    try {
+        const res = await fetchWithCache<any>('/data/headers.json');
+        if (res && res.data && Array.isArray(res.data) && Array.isArray(res.data[0])) {
+            cachedHeadersData = res.data[0];
+            return cachedHeadersData;
+        }
+    } catch (e) {
+        console.warn('Could not load headers.json:', e);
+    }
+    return null;
+}
+
+async function injectHeadersIntoLocalBook(localBook: LocalBook, bookCode: string): Promise<LocalBook> {
+    if (!localBook || !localBook.capitulo) return localBook;
+
+    const osisCode = OSIS_MAPPING[bookCode.toLowerCase()];
+    if (!osisCode) return localBook;
+
+    const allHeaders = await fetchHeadersData();
+    if (!allHeaders) return localBook;
+
+    const bookHeaders = allHeaders.find((b: any) => b.osis === osisCode);
+    if (!bookHeaders || !bookHeaders.chapters) return localBook;
+
+    bookHeaders.chapters.forEach((ch: any) => {
+        const chapterNumStr = ch.chapter?.toString();
+        if (chapterNumStr && localBook.capitulo[chapterNumStr] && Array.isArray(ch.content)) {
+            ch.content.forEach((item: any) => {
+                const verseNumStr = item.verse?.toString();
+                if (verseNumStr && localBook.capitulo[chapterNumStr][verseNumStr] && item.text) {
+                    const verseObj = localBook.capitulo[chapterNumStr][verseNumStr];
+                    if (!verseObj.titulos) {
+                        verseObj.titulos = [];
+                    }
+                    if (!verseObj.titulos.includes(item.text)) {
+                        verseObj.titulos.push(item.text);
+                    }
+                }
+            });
+        }
+    });
+
+    return localBook;
+}
+
 function getNrvaBookCode(localCode: string): string {
     const code = localCode.toLowerCase();
     return BOOK_MAPPING[code] || code.toUpperCase();
@@ -91,6 +209,7 @@ function transformNrvaToLocal(data: NrvaBook): LocalBook {
 
 /**
  * Obtiene los datos de un libro de la Biblia NRVA directamente desde GitHub Raw CDN (con caché local).
+ * Inyecta los títulos de sección desde headers.json.
  */
 export async function fetchBibleBook(bookCode: string): Promise<LocalBook> {
     const nrvaCode = getNrvaBookCode(bookCode);
@@ -103,7 +222,8 @@ export async function fetchBibleBook(bookCode: string): Promise<LocalBook> {
             throw new Error(`No data found for book ${bookCode} (NRVA: ${nrvaCode})`);
         }
 
-        return transformNrvaToLocal(nrvaData);
+        const localBook = transformNrvaToLocal(nrvaData);
+        return await injectHeadersIntoLocalBook(localBook, bookCode);
     } catch (error) {
         console.error(`Error fetching book ${bookCode} from NRVA GitHub Raw:`, error);
         throw error;
