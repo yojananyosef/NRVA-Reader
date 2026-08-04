@@ -1,11 +1,12 @@
 import type { IBibleRepository } from '../../domain/bible/IBibleRepository';
+import { fetchBibleBook } from '../../utils/bibleService';
 import { fetchWithCache } from '../../utils/fetchWithCache';
 
 export class LocalJsonBibleRepository implements IBibleRepository {
     async getChapterData(bookCode: string): Promise<any> {
         if (!bookCode) return null;
         try {
-            return await fetchWithCache(`/data/bible/${bookCode.toLowerCase()}.json`);
+            return await fetchBibleBook(bookCode);
         } catch (error) {
             console.error(`LocalJsonBibleRepository error fetching book ${bookCode}:`, error);
             throw error;
