@@ -141,7 +141,23 @@ export function useTTS() {
                 }
             };
         }
-    }, []); // Only on mount
+    }, []);
+
+    // Mobile WebKit / Chromium keep-alive timer to prevent speech engine stall
+    useEffect(() => {
+        let interval: ReturnType<typeof setInterval> | null = null;
+        if (isPlaying && !isPaused) {
+            interval = setInterval(() => {
+                if (synth.current && synth.current.speaking) {
+                    synth.current.pause();
+                    synth.current.resume();
+                }
+            }, 10000);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [isPlaying, isPaused]); // Only on mount
 
     // Separate effect for keepAlive to avoid re-triggering logic on isPlaying change
     useEffect(() => {

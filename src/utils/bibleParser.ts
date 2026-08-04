@@ -3,25 +3,7 @@ import type { BiblePassage } from "../domain/search/SearchEntities";
 
 export type { BiblePassage };
 
-/**
- * Busca coincidencias de libros para sugerencias en tiempo real.
- */
-export function getBookSuggestions(partial: string) {
-    if (!partial || partial.length < 1) return [];
 
-    const search = partial.toLowerCase().trim();
-
-    // Lista de nombres extendida para búsqueda (incluye variaciones)
-    const suggestions = booksIndex.filter(book => {
-        const name = book.name.toLowerCase();
-        const code = book.code.toLowerCase();
-
-        // Coincidencia por nombre, código o si empieza por...
-        return name.includes(search) || code.includes(search);
-    });
-
-    return suggestions.slice(0, 5); // Limitar a 5 sugerencias
-}
 
 /**
  * Parser para consultas de búsqueda bíblica.
@@ -87,65 +69,95 @@ export function parseBibleQuery(query: string): BiblePassage[] {
     return results;
 }
 
+export function normalizeText(str: string): string {
+    return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/(1ra|1ª|1er|1ro|1º)/g, "1")
+        .replace(/(2da|2ª|2do|2º)/g, "2")
+        .replace(/(3ra|3ª|3ro|3º)/g, "3")
+        .trim();
+}
+
+/**
+ * Busca coincidencias de libros para sugerencias en tiempo real.
+ */
+export function getBookSuggestions(partial: string) {
+    if (!partial || partial.length < 1) return [];
+
+    const search = normalizeText(partial);
+
+    const suggestions = booksIndex.filter(book => {
+        const name = normalizeText(book.name);
+        const code = normalizeText(book.code);
+
+        return name.includes(search) || code.includes(search);
+    });
+
+    return suggestions.slice(0, 5);
+}
+
 function findBookByAnyName(name: string) {
-    // Primero búsqueda exacta por nombre
-    let book = booksIndex.find(b => b.name.toLowerCase() === name);
+    const cleanName = normalizeText(name);
+
+    // Primero búsqueda exacta por nombre normalizado
+    let book = booksIndex.find(b => normalizeText(b.name) === cleanName);
     if (book) return book;
 
-    // Búsqueda por abreviatura o prefijo
-    // Por ahora usamos una lógica simple, se podría mejorar con un mapa de abreviaturas
+    // Búsqueda por código o prefijo
     book = booksIndex.find(b =>
-        b.code.toLowerCase() === name ||
-        b.name.toLowerCase().startsWith(name)
+        normalizeText(b.code) === cleanName ||
+        normalizeText(b.name).startsWith(cleanName)
     );
 
     // Casos especiales y abreviaturas comunes
     if (!book) {
         const specialNames: Record<string, string> = {
             // Pentateuco
-            'genesis': 'gen', 'génesis': 'gen', 'gn': 'gen',
-            'exodo': 'exo', 'éxodo': 'exo', 'ex': 'exo',
-            'levitico': 'lev', 'levítico': 'lev', 'lv': 'lev',
-            'numeros': 'num', 'números': 'num', 'nm': 'num',
+            'genesis': 'gen', 'gn': 'gen',
+            'exodo': 'exo', 'ex': 'exo',
+            'levitico': 'lev', 'lv': 'lev',
+            'numeros': 'num', 'nm': 'num',
             'deuteronomio': 'deu', 'dt': 'deu',
             // Históricos
-            'josue': 'jos', 'josué': 'jos', 'jos': 'jos',
+            'josue': 'jos',
             'jueces': 'jdg', 'jue': 'jdg',
             'rut': 'rut', 'rt': 'rut',
             '1 samuel': '1sa', '1sa': '1sa', '1 sam': '1sa',
             '2 samuel': '2sa', '2sa': '2sa', '2 sam': '2sa',
             '1 reyes': '1ki', '1re': '1ki', '1 rey': '1ki',
             '2 reyes': '2ki', '2re': '2ki', '2 rey': '2ki',
-            '1 cronicas': '1ch', '1cr': '1ch', '1 crónicas': '1ch',
-            '2 cronicas': '2ch', '2cr': '2ch', '2 crónicas': '2ch',
+            '1 cronicas': '1ch', '1cr': '1ch',
+            '2 cronicas': '2ch', '2cr': '2ch',
             'esdras': 'ezr', 'esd': 'ezr',
-            'nehemias': 'neh', 'nehemías': 'neh', 'neh': 'neh',
-            'ester': 'est', 'est': 'est',
+            'nehemias': 'neh',
+            'ester': 'est',
             // Poéticos
             'job': 'job',
-            'salmos': 'psa', 'sal': 'psa', 'ps': 'psa',
+            'salmos': 'psa', 'sal': 'psa', 'ps': 'psa', 'salmo': 'psa',
             'proverbios': 'pro', 'pr': 'pro', 'prov': 'pro',
-            'eclesiastes': 'ecc', 'eclesiastés': 'ecc', 'ec': 'ecc',
-            'cantares': 'sng', 'cant': 'sng',
+            'eclesiastes': 'ecc', 'ec': 'ecc',
+            'cantares': 'sol', 'cant': 'sol',
             // Profetas Mayores
-            'isaias': 'isa', 'isaías': 'isa', 'is': 'isa',
-            'jeremias': 'jer', 'jeremías': 'jer', 'jr': 'jer',
-            'lamentaciones': 'lam', 'lam': 'lam',
-            'ezequiel': 'ezk', 'ez': 'ezk',
+            'isaias': 'isa', 'is': 'isa',
+            'jeremias': 'jer', 'jr': 'jer',
+            'lamentaciones': 'lam',
+            'ezequiel': 'eze', 'ez': 'eze',
             'daniel': 'dan', 'dn': 'dan',
             // Profetas Menores
             'oseas': 'hos', 'os': 'hos',
-            'joel': 'jol', 'jl': 'jol',
-            'amos': 'amo', 'amós': 'amo', 'am': 'amo',
-            'abdias': 'oba', 'abdías': 'oba', 'ab': 'oba',
-            'jonas': 'jon', 'jonás': 'jon',
+            'joel': 'joe', 'jl': 'joe',
+            'amos': 'amo', 'am': 'amo',
+            'abdias': 'oba', 'ab': 'oba',
+            'jonas': 'jon',
             'miqueas': 'mic', 'mi': 'mic',
-            'nahum': 'nam', 'nahún': 'nam',
-            'habacuc': 'hab', 'hab': 'hab',
-            'sofonias': 'zep', 'sofonías': 'zep',
-            'hageo': 'hag', 'hag': 'hag',
-            'zacarias': 'zec', 'zacarías': 'zec',
-            'malaquias': 'mal', 'malaquías': 'mal',
+            'nahum': 'nah',
+            'habacuc': 'hab',
+            'sofonias': 'zep',
+            'hageo': 'hag',
+            'zacarias': 'zec',
+            'malaquias': 'mal',
             // Nuevo Testamento - Evangelios y Hechos
             'mateo': 'mat', 'mt': 'mat',
             'marcos': 'mrk', 'mc': 'mrk',
@@ -153,31 +165,31 @@ function findBookByAnyName(name: string) {
             'juan': 'jhn', 'jn': 'jhn',
             'hechos': 'act', 'hch': 'act',
             // Epístolas Paulinas
-            'romanos': 'rom', 'rom': 'rom', 'ro': 'rom',
-            '1 corintios': '1co', '1co': '1co',
-            '2 corintios': '2co', '2co': '2co',
-            'galatas': 'gal', 'gálatas': 'gal', 'gl': 'gal',
+            'romanos': 'rom', 'ro': 'rom',
+            '1 corintios': '1co', '1cor': '1co',
+            '2 corintios': '2co', '2cor': '2co',
+            'galatas': 'gal', 'gl': 'gal',
             'efesios': 'eph', 'ef': 'eph',
-            'filipenses': 'php', 'fil': 'php',
-            'colosenses': 'col', 'col': 'col',
+            'filipenses': 'phi', 'fil': 'phi',
+            'colosenses': 'col',
             '1 tesalonicenses': '1th', '1ts': '1th',
             '2 tesalonicenses': '2th', '2ts': '2th',
             '1 timoteo': '1ti', '1tm': '1ti',
             '2 timoteo': '2ti', '2tm': '2ti',
             'tito': 'tit', 'tt': 'tit',
-            'filemon': 'phm', 'filemón': 'phm',
+            'filemon': 'phm',
             // Otras Epístolas y Apocalipsis
-            'hebreos': 'heb', 'heb': 'heb',
-            'santiago': 'jas', 'stgo': 'jas', 'sant': 'jas',
+            'hebreos': 'heb',
+            'santiago': 'jam', 'stgo': 'jam', 'sant': 'jam',
             '1 pedro': '1pe', '1p': '1pe',
             '2 pedro': '2pe', '2p': '2pe',
-            '1 juan': '1jn', '1j': '1jn',
-            '2 juan': '2jn', '2j': '2jn',
-            '3 juan': '3jn', '3j': '3jn',
-            'judas': 'jud', 'jud': 'jud',
+            '1 juan': '1jo', '1j': '1jo', '1jn': '1jo',
+            '2 juan': '2jo', '2j': '2jo', '2jn': '2jo',
+            '3 juan': '3jo', '3j': '3jo', '3jn': '3jo',
+            'judas': 'jud',
             'apocalipsis': 'rev', 'ap': 'rev', 'revelaciones': 'rev'
         };
-        const code = specialNames[name];
+        const code = specialNames[cleanName];
         if (code) return booksIndex.find(b => b.code === code);
     }
 

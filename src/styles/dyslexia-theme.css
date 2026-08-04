@@ -389,6 +389,32 @@ select {
     --surface-active-bg: color-mix(in srgb, var(--color-text), transparent 88%);
 }
 
+[data-theme='oled'] {
+    --color-bg: #000000;
+    --color-text: #f0e6d2;
+    --color-link: #f59e0b;
+    --color-primary: #f59e0b;
+    --color-primary-hover: color-mix(in srgb, var(--color-link), white 15%);
+    --color-primary-active: color-mix(in srgb, var(--color-link), white 30%);
+    --surface-muted-bg: #121212;
+    --surface-muted-border: #262626;
+    --surface-hover-bg: #1f1f1f;
+    --surface-active-bg: #2a2a2a;
+}
+
+/* Bionic Reading Fixation Bolding */
+.bionic-fixation {
+    font-weight: 700 !important;
+    opacity: 0.95;
+}
+
+/* Phonetic Dot Separator */
+.syllable-dot {
+    opacity: 0.45;
+    margin: 0 0.02em;
+    user-select: none;
+}
+
 /* Font Families */
 body[data-font='dyslexic'] {
     --font-family: 'OpenDyslexic', 'Comic Sans MS', 'Comic Sans', sans-serif;

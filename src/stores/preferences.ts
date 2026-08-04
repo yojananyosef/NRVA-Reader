@@ -1,6 +1,6 @@
 import { map } from 'nanostores';
 
-export type Theme = 'light' | 'dark' | 'sepia';
+export type Theme = 'light' | 'dark' | 'sepia' | 'oled';
 export type FontFamily = 'sans' | 'dyslexic';
 export const PREFS_STORAGE_KEY = 'bible-reader-prefs';
 
@@ -17,6 +17,9 @@ export interface Preferences {
     skipFootnotes: boolean;
     showRedLetters: boolean;
     selectedVoiceURI: string | null;
+    bionicReading: boolean;
+    phoneticDots: boolean;
+    keyboardShortcutsEnabled: boolean;
 }
 
 export const defaultPreferences: Preferences = {
@@ -31,7 +34,10 @@ export const defaultPreferences: Preferences = {
     skipVerses: true,
     skipFootnotes: true,
     showRedLetters: true,
-    selectedVoiceURI: null
+    selectedVoiceURI: null,
+    bionicReading: false,
+    phoneticDots: false,
+    keyboardShortcutsEnabled: true
 };
 
 let initialPrefs = defaultPreferences;

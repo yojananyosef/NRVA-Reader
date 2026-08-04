@@ -37,7 +37,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  if (event.request.method !== 'GET' || url.pathname.endsWith('.json')) {
+  if (event.request.method !== 'GET') {
     return;
   }
 

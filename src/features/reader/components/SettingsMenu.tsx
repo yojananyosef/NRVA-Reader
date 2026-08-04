@@ -43,9 +43,10 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
                 <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm font-medium opacity-80">
                         <Ruler className="w-4 h-4" />
-                        <label>Herramientas de Lectura</label>
+                        <label>Herramientas Neurocognitivas</label>
                     </div>
 
+                    {/* Guía de Lectura */}
                     <div className="flex items-center justify-between p-3 rounded-lg border surface-card">
                         <div className="flex items-center gap-3">
                             <Ruler className="w-5 h-5 opacity-60" />
@@ -69,6 +70,76 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
                         >
                             <div
                                 className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full shadow-md transition-all duration-200 ${$preferences.rulerEnabled ? 'left-[22px]' : 'left-0.5'}`}
+                                style={{
+                                    backgroundColor: 'var(--color-bg)',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Lectura Biónica (Bionic Reading) */}
+                    <div className="flex items-center justify-between p-3 rounded-lg border surface-card">
+                        <div className="flex items-center gap-3">
+                            <Type className="w-5 h-5 opacity-60" />
+                            <div className="flex flex-col">
+                                <span className="font-medium text-sm">Lectura Biónica</span>
+                                <span className="text-[10px] opacity-60">Resalta puntos de fijación sacádica</span>
+                            </div>
+                        </div>
+                        <div
+                            onClick={() => update('bionicReading', !$preferences.bionicReading)}
+                            role="switch"
+                            aria-checked={$preferences.bionicReading}
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    update('bionicReading', !$preferences.bionicReading);
+                                }
+                            }}
+                            className="w-11 h-6 rounded-full transition-all duration-200 relative shadow-inner cursor-pointer"
+                            style={{
+                                backgroundColor: $preferences.bionicReading ? 'var(--color-link)' : 'color-mix(in srgb, var(--color-text), transparent 75%)',
+                                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)'
+                            }}
+                        >
+                            <div
+                                className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full shadow-md transition-all duration-200 ${$preferences.bionicReading ? 'left-[22px]' : 'left-0.5'}`}
+                                style={{
+                                    backgroundColor: 'var(--color-bg)',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Separación Fonética (Puntos Silábicos) */}
+                    <div className="flex items-center justify-between p-3 rounded-lg border surface-card">
+                        <div className="flex items-center gap-3">
+                            <AlignJustify className="w-5 h-5 opacity-60" />
+                            <div className="flex flex-col">
+                                <span className="font-medium text-sm">Puntos Silábicos</span>
+                                <span className="text-[10px] opacity-60">Facilita decodificación fonológica</span>
+                            </div>
+                        </div>
+                        <div
+                            onClick={() => update('phoneticDots', !$preferences.phoneticDots)}
+                            role="switch"
+                            aria-checked={$preferences.phoneticDots}
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    update('phoneticDots', !$preferences.phoneticDots);
+                                }
+                            }}
+                            className="w-11 h-6 rounded-full transition-all duration-200 relative shadow-inner cursor-pointer"
+                            style={{
+                                backgroundColor: $preferences.phoneticDots ? 'var(--color-link)' : 'color-mix(in srgb, var(--color-text), transparent 75%)',
+                                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)'
+                            }}
+                        >
+                            <div
+                                className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full shadow-md transition-all duration-200 ${$preferences.phoneticDots ? 'left-[22px]' : 'left-0.5'}`}
                                 style={{
                                     backgroundColor: 'var(--color-bg)',
                                     boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
@@ -175,11 +246,12 @@ export default function SettingsMenu({ voices, selectedVoice, setSelectedVoice }
                         <Palette className="w-4 h-4" />
                         <label>Tema</label>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                         {[
                             { value: 'light', label: 'Claro', icon: Sun },
                             { value: 'dark', label: 'Oscuro', icon: Moon },
                             { value: 'sepia', label: 'Sepia', icon: BookOpen },
+                            { value: 'oled', label: 'OLED', icon: Moon },
                         ].map((theme) => (
                             <button
                                 type="button"

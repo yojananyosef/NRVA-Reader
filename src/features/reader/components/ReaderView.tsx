@@ -14,6 +14,24 @@ import { sanitizeHTML } from '../../../utils/security';
 import type { LocalVerse } from '../../../utils/bibleService';
 import { useVerseMenu } from '../hooks/useVerseMenu';
 import { useVerseNavigation } from '../hooks/useVerseNavigation';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
+function applyBionicReading(html: string): string {
+    return html.replace(/(?<!<[^>]*)\b([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]+)\b(?![^<]*>)/g, (_, word: string) => {
+        if (word.length <= 1) return word;
+        const mid = Math.ceil(word.length * 0.45);
+        const fixation = word.slice(0, mid);
+        const rest = word.slice(mid);
+        return `<b class="bionic-fixation">${fixation}</b>${rest}`;
+    });
+}
+
+function applyPhoneticDots(html: string): string {
+    return html.replace(/(?<!<[^>]*)\b([a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]{6,})\b(?![^<]*>)/g, (word: string) => {
+        const chunks = word.match(/.{1,3}/g) || [word];
+        return chunks.join('<span class="syllable-dot">·</span>');
+    });
+}
 
 export default function ReaderView() {
     const { params, isSearching, setParams } = useReaderParams();
@@ -57,6 +75,26 @@ export default function ReaderView() {
     // Stores globales
     const $highlights = useStore(highlights);
     const $preferences = useStore(preferences);
+
+    // Sync theme data-attribute on documentElement
+    useEffect(() => {
+        if ($preferences.theme) {
+            document.documentElement.setAttribute('data-theme', $preferences.theme);
+        }
+    }, [$preferences.theme]);
+
+    // Keyboard navigation shortcuts
+    useKeyboardShortcuts({
+        onNextChapter: nextLink ? () => handleNavigate(nextLink) : undefined,
+        onPrevChapter: prevLink ? () => handleNavigate(prevLink) : undefined,
+        onToggleRuler: () => {
+            preferences.set({ ...$preferences, rulerEnabled: !$preferences.rulerEnabled });
+        },
+        onCloseModal: () => {
+            if (menuState.isOpen) setMenuState({ isOpen: false, verseNumber: 0, verseText: '', position: { top: 0, left: 0 } });
+        },
+        enabled: true
+    });
 
     // Sincronizar carga con el estado global de carga
     useEffect(() => {
@@ -413,14 +451,23 @@ export default function ReaderView() {
                                         {verse.number}
                                     </span>
                                     <span class="sr-only">Versículo {verse.number} </span>
-                                    <span
-                                        class={verse.isHighlighted ? "font-medium" : ""}
-                                        dangerouslySetInnerHTML={{
-                                            __html: sanitizeHTML($preferences.showRedLetters
-                                                ? formatRedLetters(verse.text, bookKey, currentChapNum, verseNum)
-                                                : verse.text)
-                                        }}
-                                    />
+                                    {(() => {
+                                        let rawText = $preferences.showRedLetters
+                                            ? formatRedLetters(verse.text, bookKey, currentChapNum, verseNum)
+                                            : verse.text;
+                                        if ($preferences.bionicReading) {
+                                            rawText = applyBionicReading(rawText);
+                                        }
+                                        if ($preferences.phoneticDots) {
+                                            rawText = applyPhoneticDots(rawText);
+                                        }
+                                        return (
+                                            <span
+                                                class={verse.isHighlighted ? "font-medium" : ""}
+                                                dangerouslySetInnerHTML={{ __html: sanitizeHTML(rawText) }}
+                                            />
+                                        );
+                                    })()}
                                     {currentChapterCommentaryVerses.some((c: any) => c.verse === parseInt(verse.number)) && (
                                         <a
                                             href={`/commentary?book=${bookKey}&chapter=${chapterKey}#com-${verse.number}`}
