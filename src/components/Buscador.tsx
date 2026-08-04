@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 
 export default function Buscador() {
   const [query, setQuery] = useState('');
@@ -113,10 +113,9 @@ export default function Buscador() {
             </h3>
             <ul className="grid gap-4 auto-rows-min">
               {resultados.map((res: any, i) => (
-                // Enlace dinámico al libro en tu app (dependiendo de la URL real)
-                // Asumo /bible/[book]/[chapter]
+                // Enlace dinámico al libro en tu app
                 <a 
-                   href={`/?book=${res.b.toLowerCase()}&chapter=${res.c + 1}&verses=${res.v + 1}#v-${res.v + 1}`}
+                   href={`/?book=${res.b.toLowerCase()}&chapter=${res.c}&verses=${res.v}#v-${res.v}`}
                    key={i} 
                    className="group block p-5 bg-[var(--color-bg)] rounded-xl border border-[var(--surface-muted-border)] 
                               shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-[var(--color-link)]
@@ -126,15 +125,13 @@ export default function Buscador() {
                   <div className="absolute opacity-0 group-hover:opacity-10 dark:group-hover:opacity-[0.03] transition-opacity top-0 right-0 w-32 h-32 bg-[var(--color-link)] rounded-bl-full pointer-events-none" />
                   
                   <span className="inline-flex items-center gap-2 font-bold text-[var(--color-link)] mb-2 font-serif tracking-wide text-lg">
-                    {res.bn} {res.c + 1}:{res.v + 1}
+                    {res.bn} {res.c}:{res.v}
                     <svg className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[var(--color-link)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                     </svg>
                   </span>
                   
                   <p className="text-[var(--color-text)] opacity-90 font-serif leading-relaxed text-base md:text-lg">
-                    {/* Sumamos 1 a capitulo y versiculo porque internamente el JSON está basado en índices (0-index posiblemente) 
-                        Depende de cómo sea la DB. Ajustaremos si hace falta. */}
                     {highlightText(res.t, query)}
                   </p>
                 </a>
