@@ -1,7 +1,7 @@
 {
   "name": "NRVA Reader - Lectura Bíblica Accesible",
   "short_name": "NRVA Reader",
-  "description": "Plataforma de estudio bíblico accesible impulsada por la versión Nueva Reina Valera Accesible (NRVA).",
+  "description": "Plataforma de estudio bíblico accesible impulsada por la versión Nueva Reina-Valera Académica (NRVA).",
   "start_url": "/",
   "display": "standalone",
   "display_override": [

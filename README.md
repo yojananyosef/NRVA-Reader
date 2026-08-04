@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Version](https://img.shields.io/badge/version-2.0.0-green.svg) ![Astro](https://img.shields.io/badge/astro-5.x-orange.svg) ![Preact](https://img.shields.io/badge/preact-10.x-purple.svg)
 
-**NRVA Reader** es la plataforma web progresiva (PWA) oficial impulsada por la versión **Nueva Reina Valera Accesible (NRVA)**, diseñada desde cero con un enfoque neurocognitivo para la accesibilidad (especialmente dislexia y estrés visual). No es solo un lector; es una implementación de referencia de principios de diseño inclusivo basados en evidencia científica.
+**NRVA Reader** es la plataforma web progresiva (PWA) oficial impulsada por la versión **Nueva Reina-Valera Académica (NRVA)**, diseñada desde cero con un enfoque neurocognitivo para la accesibilidad (especialmente dislexia y estrés visual). No es solo un lector; es una implementación de referencia de principios de diseño inclusivo basados en evidencia científica.
 
 ## 🧠 Filosofía y Ciencia (Position Paper)
 

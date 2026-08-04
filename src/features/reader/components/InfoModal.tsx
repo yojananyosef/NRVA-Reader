@@ -93,7 +93,7 @@ export default function InfoModal({ isOpen, onClose }: Props) {
                         <h4 className="text-lg font-bold border-l-4 border-[var(--color-link)] pl-3">NRVA Reader</h4>
                         <div className="space-y-3 opacity-90 leading-relaxed">
                             <p>
-                                <strong>NRVA Reader</strong> es la plataforma oficial de lectura y estudio profundo impulsada por la versión <strong>Nueva Reina Valera Accesible (NRVA)</strong>. Nuestro compromiso es facilitar el acceso a la Palabra de Dios mediante herramientas tecnológicas inclusivas que promuevan la comprensión del texto bíblico en sus idiomas originales y el crecimiento espiritual fundamentado en la verdad revelada.
+                                <strong>NRVA Reader</strong> es la plataforma oficial de lectura y estudio profundo impulsada por la versión <strong>Nueva Reina-Valera Académica (NRVA)</strong>. Nuestro compromiso es facilitar el acceso a la Palabra de Dios mediante herramientas tecnológicas inclusivas que promuevan la comprensión del texto bíblico en sus idiomas originales y el crecimiento espiritual fundamentado en la verdad revelada.
                             </p>
                             <p>
                                 Este proyecto ofrece una Biblia interlineal completa (Español, Hebreo y Griego) con herramientas de análisis morfológico y códigos Strong, permitiendo a cada estudiante de la Biblia explorar las riquezas del texto sagrado con precisión. Además, integra el <strong>Comentario Bíblico Adventista (CBA)</strong> para enriquecer el estudio con una perspectiva teológica sólida y equilibrada.
@@ -156,8 +156,8 @@ export default function InfoModal({ isOpen, onClose }: Props) {
                         <div className="space-y-4 opacity-90 text-sm">
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="p-4 rounded-lg border surface-card">
-                                    <h5 className="font-bold mb-1 text-[var(--color-link)]">Nueva Reina Valera Accesible (NRVA)</h5>
-                                    <p className="text-xs">Versión bíblica accesible adaptada para una lectura clara, inclusiva y contemporánea.</p>
+                                    <h5 className="font-bold mb-1 text-[var(--color-link)]">Nueva Reina-Valera Académica (NRVA)</h5>
+                                    <p className="text-xs">Revisión textual crítica y académica basada en la RV1909 frente al WLC (Hebreo) y SBLGNT (Griego), adaptada según la RAE 2010.</p>
                                 </div>
 
                                 <div className="p-4 rounded-lg border surface-card">
