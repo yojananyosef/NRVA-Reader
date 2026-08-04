@@ -1,7 +1,6 @@
-// src/application/reader/hooks/useBibleData.ts
 import { useState, useEffect } from 'preact/hooks';
-import { fetchBibleBook, type LocalBook } from '../../../utils/bibleService';
-import { fetchWithCache } from '../../../utils/fetchWithCache';
+import type { LocalBook } from '../../../utils/bibleService';
+import { bibleRepository } from '../../../infrastructure/bible/LocalJsonBibleRepository';
 
 interface UseBibleDataReturn {
     bookData: LocalBook | null;
@@ -14,7 +13,7 @@ interface UseBibleDataReturn {
  * useBibleData (Application Hook)
  *
  * Responsabilidad Única: Gestionar la obtención de datos del libro y comentarios.
- * Abstrae la fuente de datos (Firebase/Cache) y el manejo de errores.
+ * Abstrae la fuente de datos mediante la interfaz de Repositorio de Dominio.
  */
 export function useBibleData(bookCode: string, isSearching: boolean): UseBibleDataReturn {
     const [bookData, setBookData] = useState<LocalBook | null>(null);
@@ -23,7 +22,6 @@ export function useBibleData(bookCode: string, isSearching: boolean): UseBibleDa
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
-        // Si estamos buscando, no cargamos el libro completo por defecto
         if (isSearching || !bookCode) {
             setLoading(false);
             return;
@@ -32,17 +30,16 @@ export function useBibleData(bookCode: string, isSearching: boolean): UseBibleDa
         let isMounted = true;
 
         const loadData = async () => {
-            // Evitar flash de carga si ya tenemos el libro correcto
             if (!bookData || bookData.id !== bookCode) {
                 setLoading(true);
             }
             setError(null);
 
             try {
-                // Fetch paralelo para eficiencia
+                // Fetch mediante repositorio abstraído
                 const [bookResult, commentaryResult] = await Promise.all([
-                    fetchBibleBook(bookCode),
-                    fetchWithCache<any>(`/data/commentary/${bookCode}.json`).catch(() => null)
+                    bibleRepository.getChapterData(bookCode),
+                    bibleRepository.getCommentaryData(bookCode)
                 ]);
 
                 if (isMounted) {

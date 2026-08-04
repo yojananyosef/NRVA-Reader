@@ -150,6 +150,20 @@ body {
     word-spacing: var(--reader-word-spacing) !important;
 }
 
+/* CSS Native Virtualization & Relational Selectors */
+.verse-item {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 65px;
+}
+
+.verse-item:has(.is-user-highlighted) {
+    border-left: 3px solid var(--color-link);
+}
+
+.verse-item:has(.commentary-icon:hover) {
+    background-color: var(--surface-hover-bg);
+}
+
 .reader-text p,
 .reader-text span:not(.verse-num):not(.footnote-ref):not(.commentary-icon),
 .reader-text div:not(.commentary-icon) {
