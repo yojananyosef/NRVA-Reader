@@ -53,22 +53,26 @@ export const GET: APIRoute = async ({ request }) => {
         }
 
         const normalizedQuery = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
 
         console.time("Search");
-        // Optimizamos la búsqueda: Normalizamos el texto de la Biblia solo para la comprobación
         let results = [];
         
-        // Un loop rápido es a veces mejor que .filter para poder limitar a N resultados rápidamente
-        // o si queremos ordenarlos.
         for (let entry of index) {
-            // normalizamos
             const textNormalized = entry.t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             
-            if (textNormalized.includes(normalizedQuery)) {
-                results.push(entry);
+            let matchesAll = true;
+            for (let j = 0; j < queryTokens.length; j++) {
+                if (!textNormalized.includes(queryTokens[j])) {
+                    matchesAll = false;
+                    break;
+                }
             }
-            // Límite razonable (ej. miconcordancia suele mostrar todos, pero podemos limitar a 100 para no reventar la UI)
-            if (results.length >= 150) break;
+
+            if (matchesAll) {
+                results.push(entry);
+                if (results.length >= 150) break;
+            }
         }
         console.timeEnd("Search");
 
