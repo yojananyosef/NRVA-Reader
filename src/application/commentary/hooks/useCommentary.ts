@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'preact/hooks';
 import { lastCommentaryPosition } from '../../../stores/navigation';
 import booksIndex from '../../../data/books-index.json';
 import { fetchWithCache } from '../../../utils/fetchWithCache';
+import { getCommentaryBookCode } from '../../../utils/commentaryMapping';
 
 export interface CommentaryParams {
     book: string;
@@ -109,7 +110,8 @@ export function useCommentaryData(bookKey: string) {
             setError(null);
 
             try {
-                const data = await fetchWithCache<any>(`/data/commentary/${currentBookEntry.code}.json`);
+                const commentaryCode = getCommentaryBookCode(currentBookEntry.code);
+                const data = await fetchWithCache<any>(`/data/commentary/${commentaryCode}.json`);
 
                 if (isMounted) {
                     setCommentaryData(data);

@@ -1,6 +1,7 @@
 import type { IBibleRepository } from '../../domain/bible/IBibleRepository';
 import { fetchBibleBook } from '../../utils/bibleService';
 import { fetchWithCache } from '../../utils/fetchWithCache';
+import { getCommentaryBookCode } from '../../utils/commentaryMapping';
 
 export class LocalJsonBibleRepository implements IBibleRepository {
     async getChapterData(bookCode: string): Promise<any> {
@@ -16,7 +17,8 @@ export class LocalJsonBibleRepository implements IBibleRepository {
     async getCommentaryData(bookCode: string): Promise<any> {
         if (!bookCode) return null;
         try {
-            return await fetchWithCache(`/data/commentary/${bookCode.toLowerCase()}.json`);
+            const commentaryCode = getCommentaryBookCode(bookCode);
+            return await fetchWithCache(`/data/commentary/${commentaryCode}.json`);
         } catch (error) {
             // Commentary is optional; return null gracefully if missing
             return null;

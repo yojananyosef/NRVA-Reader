@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { fetchWithCache } from '../../../utils/fetchWithCache';
+import { getCommentaryBookCode } from '../../../utils/commentaryMapping';
 
 export function useCommentary(dailyVerse: any) {
     const [commentary, setCommentary] = useState<any>(null);
@@ -17,7 +18,8 @@ export function useCommentary(dailyVerse: any) {
 
         setLoading(true);
         try {
-            const data = await fetchWithCache<any>(`/data/commentary/${dailyVerse.bookCode}.json`);
+            const commentaryCode = getCommentaryBookCode(dailyVerse.bookCode);
+            const data = await fetchWithCache<any>(`/data/commentary/${commentaryCode}.json`);
 
             if (data && data.chapters) {
                 const chapterNum = parseInt(dailyVerse.chapter);

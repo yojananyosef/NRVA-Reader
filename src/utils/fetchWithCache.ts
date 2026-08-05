@@ -100,6 +100,9 @@ export async function fetchWithCache<T>(url: string): Promise<T> {
 
         // Fallback: si falla la Cache API (por ejemplo en modo incógnito), intentar fetch normal
         const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
+        }
         return await response.json();
     }
 }
